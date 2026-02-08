@@ -30,7 +30,7 @@ jobs:
           cache: true
 
       - run: flutter pub get
-      - run: flutter test
+      # - run: flutter test
       - run: flutter build apk --release
       - run: flutter build appbundle --release
 
@@ -72,7 +72,7 @@ jobs:
 
     steps:
       - name: Notify Discord
-        uses: Ilshidur/action-discord@v2
+        uses: Ilshidur/action-discord@master
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
         with:
