@@ -9,11 +9,64 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  font_awesome_flutter: ^10.12.0
+  flutter_native_splash: ^2.4.7
+
+flutter_native_splash:
+    # The color of the splash screen background
+    color: "#310061" 
+    
+    # The path to your logo image
+    image: assets/icons/battinala.png
+    
+    # Scaling and placement
+    android_12:
+      image: assets/icons/battinala.png
+      color: "#310061"
+      icon_background_color: "#310061"
+      
+    fullscreen: true
+    
+    # Ensures the icon is centered correctly on all screen sizes
+    android: true
+    ios: true
+    web: false
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
 
+  flutter_launcher_icons: "^0.14.4"
+
+flutter_launcher_icons:
+    android: "launcher_icon"
+    ios: true
+    image_path: assets/icons/battinala_logo.png
+    min_sdk_android: 21 
+    
+    # Adaptive Icon settings for modern Android
+    adaptive_icon_background: "#310061"
+    adaptive_icon_foreground: assets/icons/battinala_logo.png
+
+    web:
+      generate: true
+      image_path: assets/icons/battinala_logo.png
+      background_color: "#310061"
+      theme_color: "#1E3A8A" 
+      
+    windows:
+      generate: true
+      image_path: assets/icons/battinala_logo.png
+      icon_size: 48
+      
+    macos:
+      generate: true
+      image_path: assets/icons/battinala_logo.png
+
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/icons/
