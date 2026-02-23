@@ -1,4 +1,4 @@
-import 'package:batti_nala/utils/colors.dart';
+import 'package:batti_nala/core/utils/colors.dart';
 import 'package:flutter/material.dart';
 
 class InfoCardWidget extends StatelessWidget {
@@ -32,8 +32,8 @@ class InfoCardWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: screenWidth * 0.15,
-            width: screenWidth * 0.15,
+            height: screenWidth * 0.12,
+            width: screenWidth * 0.12,
             decoration: BoxDecoration(
               border: Border.all(color: AppColors.border),
               color: AppColors.primaryBlue900.withValues(alpha: .8),
@@ -42,7 +42,7 @@ class InfoCardWidget extends StatelessWidget {
             child: Icon(
               icon,
               color: AppColors.background.withValues(alpha: .8),
-              size: 40,
+              size: 30,
             ),
           ),
           SizedBox(width: screenWidth * 0.08),
@@ -53,7 +53,7 @@ class InfoCardWidget extends StatelessWidget {
                 Text(
                   heading,
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 20,
                     letterSpacing: 2,
                     fontWeight: FontWeight.w500,
                     color: AppColors.background,
@@ -62,7 +62,7 @@ class InfoCardWidget extends StatelessWidget {
                 SizedBox(height: 10),
                 Text(
                   info,
-                  style: TextStyle(fontSize: 20, color: AppColors.background),
+                  style: TextStyle(fontSize: 16, color: AppColors.background),
                 ),
               ],
             ),

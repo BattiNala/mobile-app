@@ -1,5 +1,6 @@
-import 'package:batti_nala/utils/colors.dart';
-import 'package:batti_nala/views/widgets/common/info_card_widget.dart';
+import 'package:batti_nala/core/utils/colors.dart';
+import 'package:batti_nala/core/common/action_button.dart';
+import 'package:batti_nala/features/onboarding/info_card_widget.dart';
 import 'package:flutter/material.dart';
 
 class OnboardingScreen extends StatelessWidget {
@@ -11,7 +12,7 @@ class OnboardingScreen extends StatelessWidget {
     final width = MediaQuery.of(context).size.width;
     return Scaffold(
       body: Container(
-        width: double.infinity,
+        width: width,
         height: height,
         padding: EdgeInsets.all(width * 0.0002),
         decoration: BoxDecoration(gradient: AppColors.welcomeGradient),
@@ -68,37 +69,9 @@ class OnboardingScreen extends StatelessWidget {
                     "Citizens and staff working together for better infrastructure",
               ),
               SizedBox(height: height * 0.02),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: width * 0.04,
-                  vertical: height * 0.01,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Material(
-                  color: AppColors.adminRed,
-                  borderRadius: BorderRadius.circular(20),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(20),
-                    onTap: () {},
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 20,
-                        horizontal: width * 0.3,
-                      ),
-                      child: Text(
-                        "Get Started",
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.background,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+              ActionButton(
+                btnInfo: "Get Started",
+                onTap: () => Navigator.pushNamed(context, '/login'),
               ),
             ],
           ),
