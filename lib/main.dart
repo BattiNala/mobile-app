@@ -1,4 +1,5 @@
 import 'package:batti_nala/features/auth/view/login_screen.dart';
+import 'package:batti_nala/features/auth/view/signup_screen.dart';
 import 'package:batti_nala/features/onboarding/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -17,6 +18,7 @@ class MainApp extends StatelessWidget {
       routes: {
         '/': (context) => const OnboardingScreen(),
         '/login': (context) => LoginScreen(),
+        '/signup': (context) => SignupScreen(),
       },
     );
   }

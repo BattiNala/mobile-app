@@ -3,8 +3,14 @@ import 'package:flutter/material.dart';
 
 class ActionButton extends StatelessWidget {
   final String btnInfo;
+  final Color? btnColor;
   final VoidCallback onTap;
-  const ActionButton({super.key, required this.btnInfo, required this.onTap});
+  const ActionButton({
+    super.key,
+    required this.btnInfo,
+    required this.onTap,
+    this.btnColor,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +26,7 @@ class ActionButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Material(
-        color: AppColors.adminRed,
+        color: btnColor ?? AppColors.adminRed,
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
