@@ -40,9 +40,9 @@ class OnboardingScreen extends StatelessWidget {
                   color: AppColors.background,
                 ),
               ),
-              SizedBox(height: height * 0.02),
+              SizedBox(height: height * 0.01),
               Text(
-                "नेपालको लागि\n Nepal's Smart Utility\n Management Platform",
+                "Nepal's Smart Utility\n Management Platform",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 20,
