@@ -22,13 +22,30 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   // Handle signup logic
   Future<void> _handleSignUp() async {
     final authNotifier = ref.read(authProvider.notifier);
-
     await authNotifier.signup();
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+
+    // Listen for state changes (errors and success navigation)
+    ref.listen(authProvider, (previous, next) {
+      final errorMessage = next.errorMessage;
+      if (errorMessage != null && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          SnackbarService.showError(context, errorMessage);
+          ref.read(authProvider.notifier).clearError();
+        });
+      }
+
+      if (next.isLoading == false &&
+          next.errorMessage == null &&
+          mounted &&
+          previous?.isLoading == true) {
+        Navigator.pushReplacementNamed(context, '/staff_dashboard');
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -49,13 +66,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                 // Name Field
                 InputLabelWidget(
-                  capitalization: TextCapitalization.words,
+                  textCapitalization: TextCapitalization.words,
                   validator: AppValidators.validateName,
-                  labelInfo: "Full Name",
-                  hintText: "Enter your name",
                   icon: FontAwesomeIcons.user,
-                  fieldType: AuthFieldType.email,
-                  keyboardType: TextInputType.text,
+                  inputType: TextInputType.name,
+                  label: 'Full Name',
+                  hint: 'Enter your name',
+                  onChanged: (val) =>
+                      ref.read(authProvider.notifier).updateName(val),
                 ),
 
                 const SizedBox(height: 20),
@@ -63,11 +81,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 // Phone Field
                 InputLabelWidget(
                   validator: AppValidators.validatePhone,
-                  labelInfo: "Phone Number",
-                  hintText: "Enter your phone number",
                   icon: FontAwesomeIcons.phone,
-                  fieldType: AuthFieldType.email,
-                  keyboardType: TextInputType.numberWithOptions(),
+                  inputType: TextInputType.phone,
+                  label: 'Phone Number',
+                  hint: 'Enter your phone number',
+                  onChanged: (val) =>
+                      ref.read(authProvider.notifier).updatePhone(val),
                 ),
 
                 const SizedBox(height: 20),
@@ -75,11 +94,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 // Email Field
                 InputLabelWidget(
                   validator: AppValidators.validateEmail,
-                  labelInfo: "Email Address",
-                  hintText: "Enter your email",
                   icon: FontAwesomeIcons.envelope,
-                  fieldType: AuthFieldType.email,
-                  keyboardType: TextInputType.emailAddress,
+                  inputType: TextInputType.emailAddress,
+                  label: 'Email Address',
+                  hint: 'Enter your email',
+                  onChanged: (val) =>
+                      ref.read(authProvider.notifier).updateEmail(val),
                 ),
 
                 const SizedBox(height: 20),
@@ -87,11 +107,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 // Password Field
                 InputLabelWidget(
                   validator: AppValidators.validatePassword,
-                  labelInfo: "Password",
-                  hintText: "Enter your password",
                   icon: FontAwesomeIcons.lock,
-                  fieldType: AuthFieldType.password,
+                  inputType: TextInputType.visiblePassword,
                   isPassword: true,
+                  label: 'Password',
+                  hint: 'Enter your password',
+                  onChanged: (val) =>
+                      ref.read(authProvider.notifier).updatePassword(val),
                 ),
 
                 const SizedBox(height: 20),
@@ -102,11 +124,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     value,
                     ref.read(authProvider).password,
                   ),
-                  labelInfo: "Confirm Password",
-                  hintText: "Confirm your password",
                   icon: FontAwesomeIcons.lock,
-                  fieldType: AuthFieldType.confirmPassword,
+                  inputType: TextInputType.visiblePassword,
                   isPassword: true,
+                  label: 'Confirm Password',
+                  hint: 'Confirm your password',
+                  onChanged: (val) => ref
+                      .read(authProvider.notifier)
+                      .updateConfirmPassword(val),
                 ),
 
                 const SizedBox(height: 20),
@@ -118,18 +143,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       : "Sign Up",
                   btnColor: AppColors.primaryBlue,
                   onTap: () {
-                    final emailController = ref.read(authProvider).email;
-                    final phoneController = ref.read(authProvider).phone;
-
-                    if ((emailController.trim().isEmpty) &&
-                        (phoneController.trim().isEmpty)) {
-                      SnackbarService.showError(
-                        context,
-                        "Either email or phone is required",
-                      );
-                      return;
-                    }
-
                     if (_keyForm.currentState!.validate()) {
                       _handleSignUp();
                     }

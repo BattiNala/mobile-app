@@ -1,28 +1,27 @@
-import 'package:batti_nala/features/auth/controllers/auth_controller.dart';
+import 'package:batti_nala/features/auth/controllers/auth_state.dart';
+import 'package:batti_nala/features/auth/repositories/auth_repository.dart';
+import 'package:batti_nala/features/auth/models/auth_response_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier() : super(AuthState());
+  final AuthRepository _authRepository;
+
+  AuthNotifier(this._authRepository) : super(AuthState());
 
   void updateName(String name) {
-    state = state.copyWith(
-      name: name,
-      errorMessage: null,
-    ); // Clear error when typing
+    state = state.copyWith(name: name, errorMessage: null);
   }
 
   void updatePhone(String phone) {
-    state = state.copyWith(
-      phone: phone,
-      errorMessage: null,
-    ); // Clear error when typing
+    state = state.copyWith(phone: phone, errorMessage: null);
   }
 
   void updateEmail(String email) {
-    state = state.copyWith(
-      email: email,
-      errorMessage: null,
-    ); // Clear error when typing
+    state = state.copyWith(email: email, errorMessage: null);
+  }
+
+  void updateHomeAddress(String homeAddress) {
+    state = state.copyWith(homeAddress: homeAddress, errorMessage: null);
   }
 
   void updatePassword(String password) {
@@ -55,12 +54,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // Clear previous errors and set loading
       state = state.copyWith(isLoading: true, errorMessage: null);
 
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      // Make API call - use email as username
+      await _authRepository.login(
+        username: state.email ?? state.phone,
+        password: state.password,
+      );
 
       // Success
       state = state.copyWith(isLoading: false);
       return true;
+    } on AuthError catch (e) {
+      state = state.copyWith(errorMessage: e.detail, isLoading: false);
+      return false;
     } catch (e) {
       state = state.copyWith(
         errorMessage: 'Connection error. Please try again.',
@@ -74,20 +79,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, errorMessage: null);
 
-      // email or phone number is necessary
-      if (state.email.isEmpty && state.phone.isEmpty) {
-        state = state.copyWith(
-          errorMessage: 'Please enter either email or phone number',
-          isLoading: false,
-        );
-        return false;
-      }
-      // Simulate API call
-      await Future.delayed(const Duration(seconds: 2));
+      // Make API call - use email as username
+      await _authRepository.register(
+        username: state.email ?? state.phone,
+        password: state.password,
+        name: state.name,
+        phoneNumber: state.phone,
+        email: state.email!,
+        homeAddress: state.homeAddress,
+      );
 
       // Success
       state = state.copyWith(isLoading: false);
       return true;
+    } on AuthError catch (e) {
+      state = state.copyWith(errorMessage: e.detail, isLoading: false);
+      return false;
     } catch (e) {
       state = state.copyWith(
         errorMessage: 'Connection error. Please try again.',
@@ -105,5 +112,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 // Provider
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier();
+  final authRepository = ref.watch(authRepositoryProvider);
+  return AuthNotifier(authRepository);
 });

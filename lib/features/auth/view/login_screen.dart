@@ -19,25 +19,6 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  @override
-  void initState() {
-    super.initState();
-
-    ref.listen(authProvider, (previous, next) {
-      final errorMessage = next.errorMessage;
-      if (errorMessage != null && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          SnackbarService.showError(context, errorMessage);
-          ref.read(authProvider.notifier).clearError();
-        });
-      }
-
-      if (next.isLoading == false && next.errorMessage == null && mounted) {
-        Navigator.pushReplacementNamed(context, '/staff_dashboard');
-      }
-    });
-  }
-
   // Handle login logic
   Future<void> _handleLogin() async {
     final authNotifier = ref.read(authProvider.notifier);
@@ -47,6 +28,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+
+    // Listen for state changes (errors and success navigation)
+    ref.listen(authProvider, (previous, next) {
+      final errorMessage = next.errorMessage;
+      if (errorMessage != null && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          SnackbarService.showError(context, errorMessage);
+          ref.read(authProvider.notifier).clearError();
+        });
+      }
+
+      if (next.isLoading == false &&
+          next.errorMessage == null &&
+          mounted &&
+          previous?.isLoading == true) {
+        Navigator.pushReplacementNamed(context, '/staff_dashboard');
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -65,14 +64,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // Email Field
+                // Email/Phone34 Field
                 InputLabelWidget(
-                  validator: AppValidators.validateEmail,
-                  labelInfo: "Email/Phone",
-                  hintText: "Enter your email or phone number",
+                  validator: AppValidators.validateUsername,
                   icon: FontAwesomeIcons.envelope,
-                  fieldType: AuthFieldType.email,
-                  keyboardType: TextInputType.emailAddress,
+                  inputType: TextInputType.emailAddress,
+                  label: 'Email/Phone',
+                  hint: 'Enter your email or phone number',
+                  onChanged: (val) =>
+                      ref.read(authProvider.notifier).updateEmail(val),
                 ),
 
                 const SizedBox(height: 20),
@@ -80,11 +80,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Password Field
                 InputLabelWidget(
                   validator: AppValidators.validatePassword,
-                  labelInfo: "Password",
-                  hintText: "Enter your password",
                   icon: FontAwesomeIcons.lock,
-                  fieldType: AuthFieldType.password,
+                  inputType: TextInputType.visiblePassword,
                   isPassword: true,
+                  label: 'Password',
+                  hint: 'Enter your password',
+                  onChanged: (val) =>
+                      ref.read(authProvider.notifier).updatePassword(val),
                 ),
 
                 // Forgot Password Link
