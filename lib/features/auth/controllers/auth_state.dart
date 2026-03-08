@@ -1,7 +1,8 @@
 class AuthState {
   final String name;
   final String phone;
-  final String email;
+  final String? email;
+  final String homeAddress;
   final String password;
   final String confirmPassword;
   final bool isPasswordObscured;
@@ -13,6 +14,7 @@ class AuthState {
     this.name = '',
     this.phone = '',
     this.email = '',
+    this.homeAddress = '',
     this.password = '',
     this.confirmPassword = '',
     this.isPasswordObscured = true,
@@ -25,6 +27,7 @@ class AuthState {
     String? name,
     String? phone,
     String? email,
+    String? homeAddress,
     String? password,
     String? confirmPassword,
     bool? isPasswordObscured,
@@ -36,6 +39,7 @@ class AuthState {
       name: name ?? this.name,
       phone: phone ?? this.phone,
       email: email ?? this.email,
+      homeAddress: homeAddress ?? this.homeAddress,
       password: password ?? this.password,
       confirmPassword: confirmPassword ?? this.confirmPassword,
       isPasswordObscured: isPasswordObscured ?? this.isPasswordObscured,
