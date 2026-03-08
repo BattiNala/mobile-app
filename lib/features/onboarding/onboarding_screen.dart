@@ -1,5 +1,5 @@
 import 'package:batti_nala/core/utils/colors.dart';
-import 'package:batti_nala/core/common/action_button.dart';
+import 'package:batti_nala/core/widgets/action_button.dart';
 import 'package:batti_nala/features/onboarding/info_card_widget.dart';
 import 'package:flutter/material.dart';
 
@@ -60,7 +60,7 @@ class OnboardingScreen extends StatelessWidget {
               InfoCardWidget(
                 icon: Icons.route_outlined,
                 heading: "Smart Route Optimization",
-                info: "AI-powered maintenance routes for faster resolution",
+                info: "Shortest maintenance routes for faster resolution",
               ),
               InfoCardWidget(
                 icon: Icons.group_outlined,

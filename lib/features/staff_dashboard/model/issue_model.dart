@@ -1,0 +1,24 @@
+// Models
+enum IssueCategory { water, electricity }
+
+enum IssueStatus { pending, inProgress, resolved }
+
+class Issue {
+  final String id;
+  final IssueCategory category;
+  final String description;
+  final String locationName;
+  final IssueStatus status;
+  final String reportedBy;
+  final String reportedAt;
+
+  Issue({
+    required this.id,
+    required this.category,
+    required this.description,
+    required this.locationName,
+    required this.status,
+    required this.reportedBy,
+    required this.reportedAt,
+  });
+}
