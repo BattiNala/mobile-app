@@ -3,10 +3,12 @@ import 'package:batti_nala/core/widgets/action_button.dart';
 import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:batti_nala/core/utils/colors.dart';
 import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
+import 'package:batti_nala/core/models/user_model.dart';
 import 'package:batti_nala/features/auth/view/auth_header_widget.dart';
 import 'package:batti_nala/features/auth/view/input_label_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -21,31 +23,55 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   // Handle login logic
   Future<void> _handleLogin() async {
-    final authNotifier = ref.read(authProvider.notifier);
-    await authNotifier.login();
+    final authNotifier = ref.read(authNotifierProvider.notifier);
+    if (_formKey.currentState?.validate() ?? false) {
+      final authState = ref.read(authNotifierProvider);
+
+      try {
+        await authNotifier.login(authState.email ?? '', authState.password);
+      } catch (e) {
+        print('[LOGIN_SCREEN] Login error: $e');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
+    final authState = ref.watch(authNotifierProvider);
 
-    // Listen for state changes (errors and success navigation)
-    ref.listen(authProvider, (previous, next) {
-      final errorMessage = next.errorMessage;
-      if (errorMessage != null && mounted) {
+    // Listen for user changes only (not entire state which fires repeatedly)
+    ref.listen<User?>(authNotifierProvider.select((state) => state.user), (
+      previous,
+      next,
+    ) {
+      // Only navigate if user just logged in (transitioned from null to logged in)
+      if (next != null && previous == null && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          SnackbarService.showError(context, errorMessage);
-          ref.read(authProvider.notifier).clearError();
+          if (context.mounted) {
+            final role = next.role;
+            final route = role == 'citizen'
+                ? '/citizen-dashboard'
+                : '/staff-dashboard';
+            context.go(route);
+          }
         });
       }
-
-      if (next.isLoading == false &&
-          next.errorMessage == null &&
-          mounted &&
-          previous?.isLoading == true) {
-        Navigator.pushReplacementNamed(context, '/staff_dashboard');
-      }
     });
+
+    // Listen for error messages
+    ref.listen<String?>(
+      authNotifierProvider.select((state) => state.errorMessage),
+      (previous, next) {
+        if (next != null && next.isNotEmpty && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              SnackbarService.showError(context, next);
+              ref.read(authNotifierProvider.notifier).clearError();
+            }
+          });
+        }
+      },
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -72,7 +98,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   label: 'Email/Phone',
                   hint: 'Enter your email or phone number',
                   onChanged: (val) =>
-                      ref.read(authProvider.notifier).updateEmail(val),
+                      ref.read(authNotifierProvider.notifier).updateEmail(val),
                 ),
 
                 const SizedBox(height: 20),
@@ -85,8 +111,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   isPassword: true,
                   label: 'Password',
                   hint: 'Enter your password',
-                  onChanged: (val) =>
-                      ref.read(authProvider.notifier).updatePassword(val),
+                  onChanged: (val) => ref
+                      .read(authNotifierProvider.notifier)
+                      .updatePassword(val),
                 ),
 
                 // Forgot Password Link
@@ -130,8 +157,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: GestureDetector(
           onTap: () {
             // Optional: Reset form when navigating
-            ref.read(authProvider.notifier).resetForm();
-            Navigator.pushNamed(context, '/signup');
+            ref.read(authNotifierProvider.notifier).resetForm();
+            context.push('/signup');
           },
           child: RichText(
             textAlign: TextAlign.center,

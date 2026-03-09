@@ -37,6 +37,10 @@ class StorageServices {
   Future<void> clearAll() async {
     await storage.deleteAll();
   }
+
+  Future<String?> getUserRole() async {
+    return await storage.read(key: _userRole);
+  }
 }
 
 final storageServiceProvider = Provider<StorageServices>((ref) {

@@ -1,3 +1,5 @@
+import 'package:batti_nala/core/models/user_model.dart';
+
 class AuthState {
   final String name;
   final String phone;
@@ -9,6 +11,10 @@ class AuthState {
   final bool isConfirmPasswordObscured;
   final bool isLoading;
   final String? errorMessage;
+  final User? user;
+  final String verificationCode;
+  final bool isVerified;
+  final String? verificationMessage;
 
   AuthState({
     this.name = '',
@@ -21,6 +27,10 @@ class AuthState {
     this.isConfirmPasswordObscured = true,
     this.isLoading = false,
     this.errorMessage,
+    this.user,
+    this.verificationCode = '',
+    this.isVerified = false,
+    this.verificationMessage,
   });
 
   AuthState copyWith({
@@ -34,6 +44,11 @@ class AuthState {
     bool? isConfirmPasswordObscured,
     bool? isLoading,
     String? errorMessage,
+    User? user,
+    String? verificationCode,
+    bool? isVerified,
+    String? verificationMessage,
+    bool clearUser = false,
   }) {
     return AuthState(
       name: name ?? this.name,
@@ -47,6 +62,10 @@ class AuthState {
           isConfirmPasswordObscured ?? this.isConfirmPasswordObscured,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: errorMessage,
+      user: clearUser ? null : (user ?? this.user),
+      verificationCode: verificationCode ?? this.verificationCode,
+      isVerified: isVerified ?? this.isVerified,
+      verificationMessage: verificationMessage ?? this.verificationMessage,
     );
   }
 }

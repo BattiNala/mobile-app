@@ -1,4 +1,4 @@
-import 'package:batti_nala/features/staff_dashboard/model/issue_model.dart';
+import 'package:batti_nala/core/models/issue_model.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 

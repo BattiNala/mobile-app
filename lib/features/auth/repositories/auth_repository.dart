@@ -1,4 +1,5 @@
 import 'package:batti_nala/core/constants/api_url.dart';
+import 'package:batti_nala/core/error/error_response.dart';
 import 'package:batti_nala/core/networks/dio_client.dart';
 import 'package:batti_nala/core/services/storage_services.dart';
 import 'package:batti_nala/features/auth/models/auth_request_model.dart';
@@ -29,7 +30,6 @@ class AuthRepository {
       );
 
       if (response.statusCode != 200) {
-        print("Error response: ${response.data}");
         throw AuthError(detail: response.data.toString());
       } else {
         final authResponse = AuthResponse.fromJson(response.data);
@@ -42,14 +42,12 @@ class AuthRepository {
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
         final errorData = e.response?.data;
-        print(" Login failed with 401: ${errorData.toString()}");
         if (errorData != null && errorData is Map) {
           throw AuthError.fromJson(errorData as Map<String, dynamic>);
         }
         throw AuthError(detail: 'Invalid credentials');
       }
       if (e.response?.statusCode == 500) {
-        print("Server error: ${e.response?.data}");
         throw AuthError(
           detail: 'Internal server error. Please try again later.',
         );
@@ -146,7 +144,67 @@ class AuthRepository {
 
   /// Logout - clears all stored tokens
   Future<void> logout() async {
+    print(" [AUTH_REPOSITORY] Logging out user and clearing tokens");
     await _storage.clearAll();
+  }
+
+  /// Verify user with OTP code
+  /// Returns success message
+  Future<void> verify({required String code}) async {
+    try {
+      final verifyRequest = VerifyOtpRequest(code: code);
+
+      final response = await _dio.post(
+        ApiUrl.verify,
+        data: verifyRequest.toJson(),
+      );
+
+      if (response.statusCode != 200) {
+        throw AuthError(
+          detail: response.data['message'] ?? 'Verification failed',
+        );
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400) {
+        final errorData = e.response?.data;
+        if (errorData != null && errorData is Map) {
+          throw AuthError.fromJson(errorData as Map<String, dynamic>);
+        }
+        throw AuthError(detail: 'Invalid or expired OTP');
+      }
+      if (e.response?.statusCode == 404) {
+        throw AuthError(detail: 'No OTP found for user');
+      }
+      throw Exception('Network error: ${e.message}');
+    }
+  }
+
+  /// Resend OTP verification code
+  /// Returns success message
+  Future<void> resendVerification() async {
+    try {
+      final response = await _dio.post(ApiUrl.resendVerification);
+
+      if (response.statusCode != 200) {
+        throw AuthError(
+          detail: response.data['message'] ?? 'Failed to resend verification',
+        );
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 400) {
+        final errorData = e.response?.data;
+        if (errorData != null && errorData is Map) {
+          throw AuthError.fromJson(errorData as Map<String, dynamic>);
+        }
+        throw AuthError(detail: 'User already verified');
+      }
+      if (e.response?.statusCode == 429) {
+        throw AuthError(
+          detail: 'Too many requests. Please wait before trying again.',
+        );
+      }
+      throw Exception('Network error: ${e.message}');
+    }
   }
 }
 

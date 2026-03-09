@@ -6,4 +6,10 @@ class ApiUrl {
   static const String login = '$baseUrl/auth/login';
   static const String citzenRegister = '$baseUrl/auth/citizen-register';
   static const String getRefreshToken = '$baseUrl/auth/refresh';
+  static const String verify = '$baseUrl/auth/verify';
+  static const String resendVerification = '$baseUrl/auth/resend-verification';
+
+  /// Profile endpoints
+  static const String citizenProfile = '$baseUrl/profile/citizen';
+  static const String employeeProfile = '$baseUrl/profile/employee';
 }

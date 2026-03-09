@@ -2,6 +2,7 @@ import 'package:batti_nala/core/utils/colors.dart';
 import 'package:batti_nala/core/widgets/action_button.dart';
 import 'package:batti_nala/features/onboarding/info_card_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
@@ -71,7 +72,7 @@ class OnboardingScreen extends StatelessWidget {
               SizedBox(height: height * 0.02),
               ActionButton(
                 btnInfo: "Get Started",
-                onTap: () => Navigator.pushNamed(context, '/login'),
+                onTap: () => context.push('/login'),
               ),
             ],
           ),
