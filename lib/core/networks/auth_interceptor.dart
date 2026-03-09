@@ -37,7 +37,7 @@ class AuthInterceptor extends Interceptor {
       // No refresh token available - user must login again
       if (refreshToken == null) {
         print(
-          "Interceptor: No refresh token available. Clearing storage and requiring login.",
+          "[AUTH] No refresh token available. Clearing storage and requiring login.",
         );
         await _storage.clearAll();
         return handler.next(err);
@@ -49,7 +49,8 @@ class AuthInterceptor extends Interceptor {
           final options = err.requestOptions;
           options.headers['Authorization'] =
               'Bearer ${await _storage.getAccessToken()}';
-          final retryResponse = await Dio().fetch(options);
+          final dio = Dio();
+          final retryResponse = await dio.fetch(options);
           handler.resolve(retryResponse);
         });
         return;
@@ -62,16 +63,23 @@ class AuthInterceptor extends Interceptor {
         final dio = Dio();
         final result = await dio.post(
           ApiUrl.getRefreshToken,
-          data: {'refreshToken': refreshToken},
+          data: {'refresh_token': refreshToken},
         );
 
         if (result.statusCode == 200) {
-          final newAccessToken = result.data['accessToken'];
-          final newRefreshToken = result.data['refreshToken'];
+          final newAccessToken = result.data['access_token'];
+          final newRefreshToken = result.data['refresh_token'];
 
           await _storage.saveAccessToken(newAccessToken);
           await _storage.saveRefreshToken(newRefreshToken);
-          print("Interceptor: Token refreshed successfully");
+          print("[AUTH] Token refreshed successfully");
+
+          // Retry the original request with new token
+          final options = err.requestOptions;
+          options.headers['Authorization'] = 'Bearer $newAccessToken';
+          final dio2 = Dio();
+          final retryResponse = await dio2.fetch(options);
+          handler.resolve(retryResponse);
 
           // Retry all queued requests
           for (final retry in _retryQueue) {
@@ -79,16 +87,16 @@ class AuthInterceptor extends Interceptor {
           }
           _retryQueue.clear();
         } else {
-          // Refresh failed clear storage and force login
-          print(
-            "Interceptor: Token refresh failed with status ${result.statusCode}",
-          );
+          // Refresh failed - clear storage and force login
+          print("[AUTH] Token refresh failed with status ${result.statusCode}");
           await _storage.clearAll();
+          return handler.next(err);
         }
       } catch (e) {
-        // Refresh token API error clear storage and force login
-        print("Interceptor: Token refresh error: $e");
+        // Refresh token API error - clear storage and force login
+        print("[AUTH] Token refresh error: $e");
         await _storage.clearAll();
+        return handler.next(err);
       } finally {
         _isRefreshing = false;
       }

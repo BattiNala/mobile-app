@@ -3,10 +3,12 @@ import 'package:batti_nala/core/widgets/action_button.dart';
 import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:batti_nala/core/utils/colors.dart';
 import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
+import 'package:batti_nala/core/models/user_model.dart';
 import 'package:batti_nala/features/auth/view/auth_header_widget.dart';
 import 'package:batti_nala/features/auth/view/input_label_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class SignupScreen extends ConsumerStatefulWidget {
@@ -21,31 +23,57 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
   // Handle signup logic
   Future<void> _handleSignUp() async {
-    final authNotifier = ref.read(authProvider.notifier);
-    await authNotifier.signup();
+    final authNotifier = ref.read(authNotifierProvider.notifier);
+    if (_keyForm.currentState?.validate() ?? false) {
+      final authState = ref.read(authNotifierProvider);
+      await authNotifier.register(
+        username: authState.name,
+        password: authState.password,
+        name: authState.name,
+        phoneNumber: authState.phone,
+        email: authState.email ?? '',
+        homeAddress: authState.homeAddress,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authProvider);
+    final authState = ref.watch(authNotifierProvider);
 
-    // Listen for state changes (errors and success navigation)
-    ref.listen(authProvider, (previous, next) {
-      final errorMessage = next.errorMessage;
-      if (errorMessage != null && mounted) {
+    // Listen for user changes only (not entire state which fires repeatedly)
+    ref.listen<User?>(authNotifierProvider.select((state) => state.user), (
+      previous,
+      next,
+    ) {
+      // Only navigate if user just signed up (transitioned from null to logged in)
+      if (next != null && previous == null && mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          SnackbarService.showError(context, errorMessage);
-          ref.read(authProvider.notifier).clearError();
+          if (context.mounted) {
+            final role = next.role;
+            final route = role == 'citizen'
+                ? '/citizen-dashboard'
+                : '/staff-dashboard';
+            context.go(route);
+          }
         });
       }
-
-      if (next.isLoading == false &&
-          next.errorMessage == null &&
-          mounted &&
-          previous?.isLoading == true) {
-        Navigator.pushReplacementNamed(context, '/staff_dashboard');
-      }
     });
+
+    // Listen for error messages
+    ref.listen<String?>(
+      authNotifierProvider.select((state) => state.errorMessage),
+      (previous, next) {
+        if (next != null && next.isNotEmpty && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) {
+              SnackbarService.showError(context, next);
+              ref.read(authNotifierProvider.notifier).clearError();
+            }
+          });
+        }
+      },
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -73,7 +101,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   label: 'Full Name',
                   hint: 'Enter your name',
                   onChanged: (val) =>
-                      ref.read(authProvider.notifier).updateName(val),
+                      ref.read(authNotifierProvider.notifier).updateName(val),
                 ),
 
                 const SizedBox(height: 20),
@@ -86,7 +114,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   label: 'Phone Number',
                   hint: 'Enter your phone number',
                   onChanged: (val) =>
-                      ref.read(authProvider.notifier).updatePhone(val),
+                      ref.read(authNotifierProvider.notifier).updatePhone(val),
                 ),
 
                 const SizedBox(height: 20),
@@ -99,7 +127,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   label: 'Email Address',
                   hint: 'Enter your email',
                   onChanged: (val) =>
-                      ref.read(authProvider.notifier).updateEmail(val),
+                      ref.read(authNotifierProvider.notifier).updateEmail(val),
                 ),
 
                 const SizedBox(height: 20),
@@ -112,8 +140,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   isPassword: true,
                   label: 'Password',
                   hint: 'Enter your password',
-                  onChanged: (val) =>
-                      ref.read(authProvider.notifier).updatePassword(val),
+                  onChanged: (val) => ref
+                      .read(authNotifierProvider.notifier)
+                      .updatePassword(val),
                 ),
 
                 const SizedBox(height: 20),
@@ -122,7 +151,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 InputLabelWidget(
                   validator: (value) => AppValidators.validateConfirmPassword(
                     value,
-                    ref.read(authProvider).password,
+                    ref.read(authNotifierProvider).password,
                   ),
                   icon: FontAwesomeIcons.lock,
                   inputType: TextInputType.visiblePassword,
@@ -130,7 +159,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   label: 'Confirm Password',
                   hint: 'Confirm your password',
                   onChanged: (val) => ref
-                      .read(authProvider.notifier)
+                      .read(authNotifierProvider.notifier)
                       .updateConfirmPassword(val),
                 ),
 
@@ -164,8 +193,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         padding: const EdgeInsets.only(top: 4, bottom: 20),
         child: GestureDetector(
           onTap: () {
-            ref.read(authProvider.notifier).resetForm();
-            Navigator.pop(context);
+            ref.read(authNotifierProvider.notifier).resetForm();
+            context.pop();
           },
           child: RichText(
             textAlign: TextAlign.center,

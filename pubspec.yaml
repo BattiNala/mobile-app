@@ -15,6 +15,7 @@ dependencies:
   flutter_riverpod: ^2.5.1  # Latest version
   go_router: ^17.1.0
   flutter_secure_storage: ^10.0.0
+  shimmer: ^3.0.0
   riverpod_annotation: ^2.3.5  # Optional, for code generation
 
 flutter_native_splash:

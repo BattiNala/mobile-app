@@ -1,41 +1,21 @@
-import 'package:batti_nala/features/auth/view/login_screen.dart';
-import 'package:batti_nala/features/auth/view/signup_screen.dart';
-import 'package:batti_nala/features/staff_dashboard/model/issue_model.dart';
-import 'package:batti_nala/features/staff_dashboard/view/dashboard_screen.dart';
-import 'package:batti_nala/features/onboarding/onboarding_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:batti_nala/core/router/app_router.dart';
 
 void main() {
-  runApp(ProviderScope(child: const MainApp()));
+  runApp(const ProviderScope(child: MainApp()));
 }
 
-class MainApp extends StatelessWidget {
+class MainApp extends ConsumerWidget {
   const MainApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  Widget build(BuildContext context, WidgetRef ref) {
+    final goRouter = ref.watch(goRouterProvider);
+
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const OnboardingScreen(),
-        '/login': (context) => LoginScreen(),
-        '/signup': (context) => SignupScreen(),
-        '/staff_dashboard': (context) => StaffDashboard(
-          staff: currentUser,
-          onViewMap: () {
-            // Navigate to map view
-          },
-          onViewIssue: (Issue issue) {
-            // Navigate to issue details
-            print('Viewing issue: ${issue.id}');
-          },
-          onNavigateToProfile: () {
-            // Navigate to profile
-          },
-        ),
-      },
+      routerConfig: goRouter,
     );
   }
 }
