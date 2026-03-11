@@ -163,7 +163,7 @@ class CitizenDashboardView extends ConsumerWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xfff5f5f5),
+      backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.red.shade600,
         onPressed: () {},
@@ -179,7 +179,7 @@ class CitizenDashboardView extends ConsumerWidget {
           ]);
         },
         child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          physics: AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
               /// HEADER
@@ -362,6 +362,7 @@ class CitizenDashboardView extends ConsumerWidget {
   Widget _reportCard(Issue report) {
     final isWater = report.category == "water";
     return Card(
+      color: Colors.white,
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
