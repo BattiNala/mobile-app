@@ -39,6 +39,9 @@ class AppValidators {
     if (value.length < 2) {
       return 'Name must be at least 2 characters';
     }
+    if (RegExp(r'^\d').hasMatch(value)) {
+      return 'Name cannot start with a number';
+    }
     return null;
   }
 

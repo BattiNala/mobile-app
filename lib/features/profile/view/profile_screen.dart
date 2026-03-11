@@ -51,6 +51,69 @@ class ProfileScreen extends ConsumerWidget {
 
                 const SizedBox(height: 24),
 
+                // ABOUT US
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withValues(alpha: 0.15),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      /// Title Row
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryBlue.withValues(
+                                alpha: 0.1,
+                              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              Icons.info_outline,
+                              color: AppColors.primaryBlue,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            "About Batti Nala",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textMain,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 14),
+
+                      /// Description
+                      Text(
+                        "Batti Nala is a community-driven platform that empowers citizens to report and resolve local issues.\n\n"
+                        "Our mission is to create safer, cleaner, and more vibrant neighborhoods by connecting residents "
+                        "with local authorities and fostering a culture of civic engagement.",
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
                 ActionButton(
                   btnInfo: "Logout",
                   btnColor: const Color(0xFFB91C1C),

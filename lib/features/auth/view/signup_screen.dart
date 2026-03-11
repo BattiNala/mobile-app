@@ -98,7 +98,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   validator: AppValidators.validateName,
                   icon: FontAwesomeIcons.user,
                   inputType: TextInputType.name,
-                  label: 'Full Name',
+                  label: 'Full Name*',
                   hint: 'Enter your name',
                   onChanged: (val) =>
                       ref.read(authNotifierProvider.notifier).updateName(val),
@@ -124,7 +124,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   validator: AppValidators.validateEmail,
                   icon: FontAwesomeIcons.envelope,
                   inputType: TextInputType.emailAddress,
-                  label: 'Email Address',
+                  label: 'Email Address*',
                   hint: 'Enter your email',
                   onChanged: (val) =>
                       ref.read(authNotifierProvider.notifier).updateEmail(val),
@@ -138,7 +138,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   icon: FontAwesomeIcons.lock,
                   inputType: TextInputType.visiblePassword,
                   isPassword: true,
-                  label: 'Password',
+                  label: 'Password*',
                   hint: 'Enter your password',
                   onChanged: (val) => ref
                       .read(authNotifierProvider.notifier)
@@ -156,7 +156,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   icon: FontAwesomeIcons.lock,
                   inputType: TextInputType.visiblePassword,
                   isPassword: true,
-                  label: 'Confirm Password',
+                  label: 'Confirm Password*',
                   hint: 'Confirm your password',
                   onChanged: (val) => ref
                       .read(authNotifierProvider.notifier)
