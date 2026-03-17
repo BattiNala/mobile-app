@@ -1,3 +1,4 @@
+import 'package:batti_nala/features/citizen_dashboard/view/issue_create_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
@@ -44,6 +45,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           onViewIssue: (issue) {},
           onNavigateToProfile: () => context.push('/profile'),
         ),
+      ),
+      GoRoute(
+        path: '/issue-create',
+        builder: (context, state) => const ReportIssueScreen(),
       ),
     ],
     redirect: (context, state) {

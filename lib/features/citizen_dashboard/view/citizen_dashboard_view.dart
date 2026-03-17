@@ -1,6 +1,6 @@
 import 'package:batti_nala/core/utils/colors.dart';
 import 'package:batti_nala/features/citizen_dashboard/controllers/citizen_dashboard_notifier.dart';
-import 'package:batti_nala/core/models/issue_model.dart';
+import 'package:batti_nala/features/citizen_dashboard/view/widgets/issue_card_widget.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -19,7 +19,7 @@ class CitizenDashboardView extends ConsumerWidget {
     final profileController = ref.read(profileNotifierProvider.notifier);
     final citizenProfile = profileState.citizenProfile;
 
-    if (profileState.isLoading) {
+    if (profileState.isLoading || reports.isEmpty) {
       return Scaffold(
         backgroundColor: AppColors.background,
         body: Column(
@@ -166,7 +166,9 @@ class CitizenDashboardView extends ConsumerWidget {
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.red.shade600,
-        onPressed: () {},
+        onPressed: () {
+          context.push('/issue-create');
+        },
         child: const Icon(Icons.add, size: 30, color: Colors.white),
       ),
 
@@ -175,15 +177,15 @@ class CitizenDashboardView extends ConsumerWidget {
           // Refresh both dashboard reports and profile
           await Future.wait([
             dashboardController.refreshReports(),
-            profileController.fetchProfile("citizen"), // fetch by role
+            profileController.fetchProfile("citizen"),
           ]);
         },
-        child: SingleChildScrollView(
+        child: CustomScrollView(
           physics: AlwaysScrollableScrollPhysics(),
-          child: Column(
-            children: [
-              /// HEADER
-              Container(
+          slivers: [
+            /// HEADER
+            SliverToBoxAdapter(
+              child: Container(
                 padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
                 decoration: BoxDecoration(
                   gradient: AppColors.welcomeGradient,
@@ -264,12 +266,16 @@ class CitizenDashboardView extends ConsumerWidget {
                   ],
                 ),
               ),
+            ),
 
-              /// REPORT LIST
-              Padding(
+            /// REPORT LIST
+            SliverToBoxAdapter(
+              child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    /// Title Row
                     Row(
                       children: [
                         const Text(
@@ -288,36 +294,32 @@ class CitizenDashboardView extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
 
-                    // Show loading if reports not loaded yet
-                    if (reports.isEmpty)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 50),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else
-                      ListView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemCount: reports.length,
-                        itemBuilder: (context, index) {
-                          final report = reports[index];
-                          return InkWell(
-                            onTap: () {
-                              // Navigate to issue details
-                            },
-                            child: _reportCard(report),
-                          );
-                        },
-                      ),
+                    const SizedBox(height: 8),
+
+                    /// Reports List
+                    ListView.separated(
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      padding: EdgeInsets.zero,
+                      itemCount: reports.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 11),
+                      itemBuilder: (context, index) {
+                        final report = reports[index];
+                        return InkWell(
+                          onTap: () {
+                            // Navigate to issue details
+                          },
+                          child: IssueCardWidget(issue: report),
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -354,81 +356,6 @@ class CitizenDashboardView extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  /// REPORT CARD
-  Widget _reportCard(Issue report) {
-    final isWater = report.category == "water";
-    return Card(
-      color: Colors.white,
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: isWater
-                        ? Colors.blue.shade50
-                        : Colors.yellow.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(
-                    isWater ? Icons.water_drop : Icons.flash_on,
-                    color: isWater ? Colors.blue : Colors.orange,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        report.description,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        report.locationName,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                Text(
-                  report.reportedAt,
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }
