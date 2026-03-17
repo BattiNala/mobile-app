@@ -16,7 +16,8 @@ dependencies:
   go_router: ^17.1.0
   flutter_secure_storage: ^10.0.0
   shimmer: ^3.0.0
-  riverpod_annotation: ^2.3.5  # Optional, for code generation
+  image_picker: ^1.2.1
+  geolocator: ^14.0.2
 
 flutter_native_splash:
     # The color of the splash screen background

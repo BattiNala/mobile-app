@@ -70,5 +70,15 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Batti Nala needs your location to mark where the issue occurred</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Batti Nala needs your location to mark where the issue occurred</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Batti Nala needs camera access to take photos of issues</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Batti Nala needs photo library access to attach images to issue reports</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Batti Nala may need microphone access for video recording</string>
 </dict>
 </plist>
