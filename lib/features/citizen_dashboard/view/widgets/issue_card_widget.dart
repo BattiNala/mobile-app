@@ -48,7 +48,10 @@ class IssueCardWidget extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: isElectricity
-                          ? [const Color(0xFFFFB8B8), const Color(0xFFFFE1E1)]
+                          ? [
+                              const Color.fromARGB(255, 132, 114, 236),
+                              const Color.fromARGB(255, 207, 206, 208),
+                            ]
                           : isSewage
                           ? [const Color(0xFFD4C1B0), const Color(0xFFF0E6DD)]
                           : [const Color(0xFFE0E0E0), const Color(0xFFF0F0F0)],
@@ -69,7 +72,7 @@ class IssueCardWidget extends StatelessWidget {
                         ? Icons.plumbing
                         : Icons.report_problem,
                     color: isElectricity
-                        ? Colors.orange.shade600
+                        ? Colors.white
                         : isSewage
                         ? Colors.brown.shade600
                         : Colors.grey.shade600,
