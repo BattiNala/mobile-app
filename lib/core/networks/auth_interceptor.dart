@@ -1,3 +1,111 @@
+// import 'package:batti_nala/core/constants/api_url.dart';
+// import 'package:batti_nala/core/services/storage_services.dart';
+// import 'package:dio/dio.dart';
+
+// class AuthInterceptor extends Interceptor {
+//   final StorageServices _storage;
+//   AuthInterceptor(this._storage);
+
+//   /// Flag to indicate if a token refresh is in progress
+//   static bool _isRefreshing = false;
+//   static final List<void Function(Response)> _retryQueue = [];
+
+//   @override
+//   Future<void> onRequest(
+//     RequestOptions options,
+//     RequestInterceptorHandler handler,
+//   ) async {
+//     if (options.path.contains('/auth/login') ||
+//         options.path.contains('/auth/register')) {
+//       return handler.next(options);
+//     }
+
+//     final token = await _storage.getAccessToken();
+
+//     if (token != null) {
+//       options.headers['Authorization'] = 'Bearer $token';
+//     }
+//     return handler.next(options);
+//   }
+
+//   @override
+//   void onError(DioException err, ErrorInterceptorHandler handler) async {
+//     // Handle 401 Unauthorized (Expired Token)
+//     if (err.response?.statusCode == 401) {
+//       final refreshToken = await _storage.getRefreshToken();
+
+//       // No refresh token available - user must login again
+//       if (refreshToken == null) {
+//         print(
+//           "[AUTH] No refresh token available. Clearing storage and requiring login.",
+//         );
+//         await _storage.clearAll();
+//         return handler.next(err);
+//       }
+
+//       // Already attempting to refresh - queue this request
+//       if (_isRefreshing) {
+//         _retryQueue.add((response) async {
+//           final options = err.requestOptions;
+//           options.headers['Authorization'] =
+//               'Bearer ${await _storage.getAccessToken()}';
+//           final dio = Dio();
+//           final retryResponse = await dio.fetch(options);
+//           handler.resolve(retryResponse);
+//         });
+//         return;
+//       }
+
+//       _isRefreshing = true;
+
+//       try {
+//         // Call Refresh Token API
+//         final dio = Dio();
+//         final result = await dio.post(
+//           ApiUrl.getRefreshToken,
+//           data: {'refresh_token': refreshToken},
+//         );
+
+//         if (result.statusCode == 200) {
+//           final newAccessToken = result.data['access_token'];
+//           final newRefreshToken = result.data['refresh_token'];
+
+//           await _storage.saveAccessToken(newAccessToken);
+//           await _storage.saveRefreshToken(newRefreshToken);
+//           print("[AUTH] Token refreshed successfully");
+
+//           // Retry the original request with new token
+//           final options = err.requestOptions;
+//           options.headers['Authorization'] = 'Bearer $newAccessToken';
+//           final dio2 = Dio();
+//           final retryResponse = await dio2.fetch(options);
+//           handler.resolve(retryResponse);
+
+//           // Retry all queued requests
+//           for (final retry in _retryQueue) {
+//             retry(result);
+//           }
+//           _retryQueue.clear();
+//         } else {
+//           // Refresh failed - clear storage and force login
+//           print("[AUTH] Token refresh failed with status ${result.statusCode}");
+//           await _storage.clearAll();
+//           return handler.next(err);
+//         }
+//       } catch (e) {
+//         // Refresh token API error - clear storage and force login
+//         print("[AUTH] Token refresh error: $e");
+//         await _storage.clearAll();
+//         return handler.next(err);
+//       } finally {
+//         _isRefreshing = false;
+//       }
+//     }
+
+//     return handler.next(err);
+//   }
+// }
+
 import 'package:batti_nala/core/constants/api_url.dart';
 import 'package:batti_nala/core/services/storage_services.dart';
 import 'package:dio/dio.dart';
@@ -6,102 +114,115 @@ class AuthInterceptor extends Interceptor {
   final StorageServices _storage;
   AuthInterceptor(this._storage);
 
-  /// Flag to indicate if a token refresh is in progress
-  static bool _isRefreshing = false;
-  static final List<void Function(Response)> _retryQueue = [];
+  bool _isRefreshing = false;
+  final List<_PendingRequest> _pendingRequests = [];
 
   @override
-  Future<void> onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) async {
-    if (options.path.contains('/auth/login') ||
-        options.path.contains('/auth/register')) {
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    // Skip auth endpoints
+    if (options.path.contains('/auth/')) {
       return handler.next(options);
     }
 
-    final token = await _storage.getAccessToken();
-
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
-    }
-    return handler.next(options);
+    _storage.getAccessToken().then((token) {
+      if (token != null) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
+      handler.next(options);
+    });
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
-    // Handle 401 Unauthorized (Expired Token)
-    if (err.response?.statusCode == 401) {
-      final refreshToken = await _storage.getRefreshToken();
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    if (err.response?.statusCode != 401) {
+      return handler.next(err);
+    }
 
-      // No refresh token available - user must login again
+    // Don't retry refresh token requests
+    if (err.requestOptions.path.contains('/auth/refresh')) {
+      _storage.clearAll();
+      return handler.next(err);
+    }
+
+    _handleTokenRefresh(err, handler);
+  }
+
+  void _handleTokenRefresh(DioException err, ErrorInterceptorHandler handler) {
+    _storage.getRefreshToken().then((refreshToken) async {
       if (refreshToken == null) {
-        print(
-          "[AUTH] No refresh token available. Clearing storage and requiring login.",
-        );
         await _storage.clearAll();
         return handler.next(err);
       }
 
-      // Already attempting to refresh - queue this request
       if (_isRefreshing) {
-        _retryQueue.add((response) async {
-          final options = err.requestOptions;
-          options.headers['Authorization'] =
-              'Bearer ${await _storage.getAccessToken()}';
-          final dio = Dio();
-          final retryResponse = await dio.fetch(options);
-          handler.resolve(retryResponse);
-        });
+        _pendingRequests.add(_PendingRequest(err.requestOptions, handler));
         return;
       }
 
       _isRefreshing = true;
 
       try {
-        // Call Refresh Token API
-        final dio = Dio();
-        final result = await dio.post(
+        final response = await Dio().post(
           ApiUrl.getRefreshToken,
           data: {'refresh_token': refreshToken},
         );
 
-        if (result.statusCode == 200) {
-          final newAccessToken = result.data['access_token'];
-          final newRefreshToken = result.data['refresh_token'];
+        if (response.statusCode == 200) {
+          final newToken = response.data['access_token'];
+          final newRefreshToken = response.data['refresh_token'];
 
-          await _storage.saveAccessToken(newAccessToken);
+          await _storage.saveAccessToken(newToken);
           await _storage.saveRefreshToken(newRefreshToken);
-          print("[AUTH] Token refreshed successfully");
 
-          // Retry the original request with new token
-          final options = err.requestOptions;
-          options.headers['Authorization'] = 'Bearer $newAccessToken';
-          final dio2 = Dio();
-          final retryResponse = await dio2.fetch(options);
-          handler.resolve(retryResponse);
+          // Retry current request
+          _retryRequest(err.requestOptions, newToken, handler);
 
-          // Retry all queued requests
-          for (final retry in _retryQueue) {
-            retry(result);
+          // Retry pending requests
+          for (var pending in _pendingRequests) {
+            _retryRequest(pending.options, newToken, pending.handler);
           }
-          _retryQueue.clear();
+          _pendingRequests.clear();
         } else {
-          // Refresh failed - clear storage and force login
-          print("[AUTH] Token refresh failed with status ${result.statusCode}");
           await _storage.clearAll();
-          return handler.next(err);
+          handler.next(err);
         }
       } catch (e) {
-        // Refresh token API error - clear storage and force login
-        print("[AUTH] Token refresh error: $e");
         await _storage.clearAll();
-        return handler.next(err);
+        handler.next(err);
       } finally {
         _isRefreshing = false;
       }
-    }
-
-    return handler.next(err);
+    });
   }
+
+  void _retryRequest(
+    RequestOptions options,
+    String token,
+    ErrorInterceptorHandler handler,
+  ) {
+    final newOptions = Options(
+      method: options.method,
+      headers: {...options.headers, 'Authorization': 'Bearer $token'},
+    );
+
+    Dio()
+        .request(
+          options.path,
+          data: options.data,
+          queryParameters: options.queryParameters,
+          options: newOptions,
+        )
+        .then((response) {
+          handler.resolve(response);
+        })
+        .catchError((e) {
+          handler.next(e as DioException);
+        });
+  }
+}
+
+class _PendingRequest {
+  final RequestOptions options;
+  final ErrorInterceptorHandler handler;
+  _PendingRequest(this.options, this.handler);
 }

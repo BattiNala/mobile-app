@@ -151,22 +151,22 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (_) {}
   }
 
-  /// TOKEN REFRESH
-  Future<void> _refreshAccessTokenIfNeeded() async {
-    try {
-      final refreshToken = await _storageServices.getRefreshToken();
+  // /// TOKEN REFRESH
+  // Future<void> _refreshAccessTokenIfNeeded() async {
+  //   try {
+  //     final refreshToken = await _storageServices.getRefreshToken();
 
-      if (refreshToken == null || refreshToken.isEmpty) return;
+  //     if (refreshToken == null || refreshToken.isEmpty) return;
 
-      final newAuthResponse = await _authRepository.refreshToken();
+  //     final newAuthResponse = await _authRepository.refreshToken();
 
-      await _storageServices.saveAccessToken(newAuthResponse.accessToken);
-      await _storageServices.saveRefreshToken(newAuthResponse.refreshToken);
-    } catch (_) {
-      await _storageServices.clearAll();
-      state = AuthState();
-    }
-  }
+  //     await _storageServices.saveAccessToken(newAuthResponse.accessToken);
+  //     await _storageServices.saveRefreshToken(newAuthResponse.refreshToken);
+  //   } catch (_) {
+  //     await _storageServices.clearAll();
+  //     state = AuthState();
+  //   }
+  // }
 
   /// FORM HELPERS
   void updateName(String name) {
