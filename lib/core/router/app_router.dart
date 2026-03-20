@@ -9,6 +9,7 @@ import 'package:batti_nala/features/onboarding/onboarding_screen.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/citizen_dashboard_view.dart';
 import 'package:batti_nala/features/staff_dashboard/view/dashboard_screen.dart';
 import 'package:batti_nala/features/staff_dashboard/model/staff_model.dart';
+import 'package:batti_nala/features/auth/view/password_reset_screen.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final user = ref.watch(authNotifierProvider.select((state) => state.user));
@@ -24,6 +25,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
+      ),
+      GoRoute(
+        path: '/password-reset',
+        builder: (context, state) => const PasswordResetScreen(),
       ),
       GoRoute(
         path: '/profile',
@@ -55,7 +60,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       final isOnOnboarding = state.matchedLocation == '/onboarding';
       final isAuthRoute =
           state.matchedLocation == '/login' ||
-          state.matchedLocation == '/signup';
+          state.matchedLocation == '/signup' ||
+          state.matchedLocation == '/password-reset';
       final isProfileRoute = state.matchedLocation == '/profile';
 
       // If user is logged in, don't show onboarding
