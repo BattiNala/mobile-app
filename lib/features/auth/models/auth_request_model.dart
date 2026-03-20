@@ -57,3 +57,44 @@ class VerifyOtpRequest {
     return {'code': code};
   }
 }
+
+class PasswordResetRequest {
+  final String username;
+
+  PasswordResetRequest({required this.username});
+
+  Map<String, dynamic> toJson() {
+    return {'username': username};
+  }
+}
+
+class PasswordResetVerifyRequest {
+  final String username;
+  final String code;
+
+  PasswordResetVerifyRequest({
+    required this.username,
+    required this.code,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {'username': username, 'code': code};
+  }
+}
+
+class PasswordResetConfirmRequest {
+  final String resetToken;
+  final String newPassword;
+
+  PasswordResetConfirmRequest({
+    required this.resetToken,
+    required this.newPassword,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'reset_token': resetToken,
+      'new_password': newPassword,
+    };
+  }
+}

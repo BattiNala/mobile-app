@@ -29,3 +29,15 @@ class AuthResponse {
     };
   }
 }
+
+class PasswordResetVerifyResponse {
+  final String resetToken;
+
+  PasswordResetVerifyResponse({required this.resetToken});
+
+  factory PasswordResetVerifyResponse.fromJson(Map<String, dynamic> json) {
+    return PasswordResetVerifyResponse(
+      resetToken: json['reset_token'] as String,
+    );
+  }
+}

@@ -148,6 +148,104 @@ class AuthRepository {
     await _storage.clearAll();
   }
 
+  String _extractAuthErrorDetail(dynamic data, String fallback) {
+    if (data is Map) {
+      final detail = data['detail'];
+      if (detail is String && detail.trim().isNotEmpty) {
+        return detail.trim();
+      }
+      final message = data['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+      return data.toString();
+    }
+    if (data is String && data.trim().isNotEmpty) return data.trim();
+    return fallback;
+  }
+
+  /// Request a password reset OTP (email/SMS) for the given username.
+  Future<void> requestPasswordReset({required String username}) async {
+    try {
+      final response = await _dio.post(
+        ApiUrl.passwordResetRequest,
+        data: PasswordResetRequest(username: username).toJson(),
+      );
+
+      if (response.statusCode != 200) {
+        throw AuthError(
+          detail: _extractAuthErrorDetail(
+            response.data,
+            'Failed to request password reset.',
+          ),
+        );
+      }
+    } on DioException catch (e) {
+      final message =
+          _extractAuthErrorDetail(e.response?.data, e.message ?? '');
+      throw AuthError(detail: message);
+    }
+  }
+
+  /// Verify password reset OTP and receive a reset token.
+  Future<PasswordResetVerifyResponse> verifyPasswordResetOtp({
+    required String username,
+    required String code,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiUrl.passwordResetVerify,
+        data: PasswordResetVerifyRequest(username: username, code: code).toJson(),
+      );
+
+      if (response.statusCode != 200) {
+        throw AuthError(
+          detail: _extractAuthErrorDetail(
+            response.data,
+            'Failed to verify OTP.',
+          ),
+        );
+      }
+
+      return PasswordResetVerifyResponse.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      final message =
+          _extractAuthErrorDetail(e.response?.data, e.message ?? '');
+      throw AuthError(detail: message);
+    }
+  }
+
+  /// Confirm password reset using reset token + new password.
+  Future<void> confirmPasswordReset({
+    required String resetToken,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiUrl.passwordResetConfirm,
+        data: PasswordResetConfirmRequest(
+          resetToken: resetToken,
+          newPassword: newPassword,
+        ).toJson(),
+      );
+
+      if (response.statusCode != 200) {
+        throw AuthError(
+          detail: _extractAuthErrorDetail(
+            response.data,
+            'Failed to reset password.',
+          ),
+        );
+      }
+    } on DioException catch (e) {
+      final message =
+          _extractAuthErrorDetail(e.response?.data, e.message ?? '');
+      throw AuthError(detail: message);
+    }
+  }
+
   /// Verify user with OTP code
   /// Returns success message
   Future<void> verify({required String code}) async {

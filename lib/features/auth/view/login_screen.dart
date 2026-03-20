@@ -120,7 +120,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      context.push('/password-reset');
+                    },
                     child: const Text(
                       "Forgot Password?",
                       style: TextStyle(color: Colors.blueAccent, fontSize: 13),
@@ -132,13 +134,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 // Login Button
                 ActionButton(
-                  btnInfo: authState.isLoading ? "Signing In..." : "Sign In",
-                  btnColor: AppColors.primaryBlue,
-                  onTap: () {
+                  width: double.infinity,
+                  label: authState.isLoading ? "Signing In..." : "Sign In",
+                  backgroundColor: AppColors.primaryBlue,
+                  onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       _handleLogin();
                     }
                   },
+                  isLoading: authState.isLoading,
                 ),
 
                 _buildRegisterLink(),
