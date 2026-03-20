@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  FLUTTER_VERSION: "3.35.6"
+  FLUTTER_VERSION: "3.24.5"
 
 jobs:
   android:
@@ -31,7 +31,6 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
-      # Dart / Flutter deps (beyond flutter-action cache)
       - name: Cache Pub + Dart Tool
         uses: actions/cache@v4
         with:
@@ -41,32 +40,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pub-
 
-      # Gradle cache
-      # - name: Cache Gradle
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: |
-      #       ~/.gradle/caches
-      #       ~/.gradle/wrapper
-      #     key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-gradle-
-
-      # Android native deps (NDK/CMake) - avoids re-downloading cmake/ndk
-      # - name: Cache Android NDK + CMake
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: |
-      #       /usr/local/lib/android/sdk/ndk
-      #       /usr/local/lib/android/sdk/cmake
-      #     key: ${{ runner.os }}-android-native-v1
-      #     restore-keys: |
-      #       ${{ runner.os }}-android-native-
-
       - name: Flutter pub get
         run: flutter pub get
-
-      # - run: flutter test
 
       - name: Build APK (release)
         run: flutter build apk --release
@@ -90,7 +65,6 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
-      # Cache Dart deps on macOS too (helps iOS job)
       - name: Cache Pub + Dart Tool
         uses: actions/cache@v4
         with:
@@ -101,7 +75,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pub-
 
-      # CocoaPods cache (works best if Podfile.lock exists)
       - name: Cache CocoaPods
         uses: actions/cache@v4
         with:
@@ -115,6 +88,80 @@ jobs:
       - name: Flutter pub get
         run: flutter pub get
 
+      # FIX 1: Replace AppDelegate with correct version
+      - name: Fix AppDelegate
+        run: |
+          cat > ios/Runner/AppDelegate.swift << 'EOF'
+          import UIKit
+          import Flutter
+
+          @UIApplicationMain
+          @objc class AppDelegate: FlutterAppDelegate {
+            override func application(
+              _ application: UIApplication,
+              didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+            ) -> Bool {
+              GeneratedPluginRegistrant.register(with: self)
+              return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+            }
+          }
+          EOF
+
+      # FIX 2: Clean iOS build artifacts
+      - name: Clean iOS build
+        run: |
+          cd ios
+          rm -rf Pods
+          rm -rf Podfile.lock
+          rm -rf ~/Library/Developer/Xcode/DerivedData
+          cd ..
+
+      # FIX 3: Create fresh Podfile
+      - name: Create Podfile
+        run: |
+          cat > ios/Podfile << 'EOF'
+          platform :ios, '12.0'
+          ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+          target 'Runner' do
+            use_frameworks!
+            use_modular_headers!
+            flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+          end
+
+          post_install do |installer|
+            installer.pods_project.targets.each do |target|
+              flutter_additional_ios_build_settings(target)
+              target.build_configurations.each do |config|
+                config.build_settings['SWIFT_VERSION'] = '5.0'
+                config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+              end
+            end
+          end
+          EOF
+
+      # FIX 4: Install CocoaPods
+      - name: Install CocoaPods
+        run: gem install cocoapods
+
+      # FIX 5: Pod install with repo update
+      - name: Pod Install
+        run: |
+          cd ios
+          pod install --repo-update
+          cd ..
+
+      # FIX 6: Verify AppDelegate
+      - name: Verify AppDelegate
+        run: |
+          if grep -q "FlutterImplicitEngineDelegate" ios/Runner/AppDelegate.swift; then
+            echo "❌ ERROR: AppDelegate still has old code"
+            exit 1
+          else
+            echo "✅ AppDelegate is correct"
+          fi
+
+      # FIX 7: Build iOS
       - name: Build iOS (release, no codesign)
         run: flutter build ios --release --no-codesign
 
