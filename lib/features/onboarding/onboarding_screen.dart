@@ -70,9 +70,13 @@ class OnboardingScreen extends StatelessWidget {
                     "Citizens and staff working together for better infrastructure",
               ),
               SizedBox(height: height * 0.02),
-              ActionButton(
-                btnInfo: "Get Started",
-                onTap: () => context.push('/login'),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ActionButton(
+                  width: double.infinity,
+                  label: "Get Started",
+                  onPressed: () => context.push('/login'),
+                ),
               ),
             ],
           ),
