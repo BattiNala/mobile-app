@@ -85,8 +85,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               children: [
                 const SizedBox(height: 60),
                 const AuthHeaderWidget(
-                  mainText: "Welcome Back",
-                  infoText: "Sign in to continue",
+                  mainText: 'Welcome Back',
+                  infoText: 'Sign in to continue',
                 ),
                 const SizedBox(height: 30),
 
@@ -124,7 +124,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       context.push('/password-reset');
                     },
                     child: const Text(
-                      "Forgot Password?",
+                      'Forgot Password?',
                       style: TextStyle(color: Colors.blueAccent, fontSize: 13),
                     ),
                   ),
@@ -135,7 +135,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Login Button
                 ActionButton(
                   width: double.infinity,
-                  label: authState.isLoading ? "Signing In..." : "Sign In",
+                  label: authState.isLoading ? 'Signing In...' : 'Sign In',
                   backgroundColor: AppColors.primaryBlue,
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
@@ -176,8 +176,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                TextSpan(
-                  text: "Register",
+                const TextSpan(
+                  text: 'Register',
                   style: TextStyle(
                     color: AppColors.primaryBlue,
                     fontWeight: FontWeight.bold,

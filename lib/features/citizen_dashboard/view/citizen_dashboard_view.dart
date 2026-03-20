@@ -96,13 +96,13 @@ class CitizenDashboardView extends ConsumerWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ListView.builder(
-                  itemCount: 4,
+                  itemCount: 5,
                   itemBuilder: (context, index) {
                     return Shimmer.fromColors(
                       baseColor: AppColors.primaryBlue.withValues(alpha: 0.2),
                       highlightColor: Colors.white.withValues(alpha: 0.3),
                       child: Card(
-                        margin: const EdgeInsets.only(bottom: 12),
+                        margin: const EdgeInsets.only(bottom: 20),
                         color: AppColors.primaryBlue,
                         elevation: 2,
                         child: Padding(
@@ -111,7 +111,7 @@ class CitizenDashboardView extends ConsumerWidget {
                             children: [
                               Container(
                                 width: 44,
-                                height: 44,
+                                height: 74,
                                 decoration: BoxDecoration(
                                   color: AppColors.primaryBlue.withValues(
                                     alpha: 0.2,
@@ -165,9 +165,11 @@ class CitizenDashboardView extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: FloatingActionButton(
+        heroTag: 'citizen_dashboard_add_issue',
         backgroundColor: Colors.red.shade600,
-        onPressed: () {
-          context.push('/issue-create');
+        onPressed: () async {
+          await context.push('/issue-create');
+          await dashboardController.refreshReports();
         },
         child: const Icon(Icons.add, size: 30, color: Colors.white),
       ),
@@ -177,11 +179,11 @@ class CitizenDashboardView extends ConsumerWidget {
           // Refresh both dashboard reports and profile
           await Future.wait([
             dashboardController.refreshReports(),
-            profileController.fetchProfile("citizen"),
+            profileController.fetchProfile('citizen'),
           ]);
         },
         child: CustomScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             /// HEADER
             SliverToBoxAdapter(
@@ -207,8 +209,8 @@ class CitizenDashboardView extends ConsumerWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "Welcome Back,",
+                            const Text(
+                              'Welcome Back,',
                               style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 13,
@@ -246,7 +248,7 @@ class CitizenDashboardView extends ConsumerWidget {
                       children: [
                         Expanded(
                           child: _statCard(
-                            "Pending",
+                            'Pending',
                             dashboardController.pendingCount,
                             Icons.access_time,
                             Colors.orange,
@@ -255,7 +257,7 @@ class CitizenDashboardView extends ConsumerWidget {
                         const SizedBox(width: 14),
                         Expanded(
                           child: _statCard(
-                            "Resolved",
+                            'Resolved',
                             dashboardController.resolvedCount,
                             Icons.check_circle,
                             Colors.green,
@@ -279,7 +281,7 @@ class CitizenDashboardView extends ConsumerWidget {
                     Row(
                       children: [
                         const Text(
-                          "Your Reports",
+                          'Your Reports',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w600,

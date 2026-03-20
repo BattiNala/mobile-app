@@ -11,6 +11,9 @@ import 'package:batti_nala/features/citizen_dashboard/view/widgets/priority_sele
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:batti_nala/features/citizen_dashboard/controllers/location_notifier.dart';
+import 'package:batti_nala/features/citizen_dashboard/controllers/location_state.dart';
+// ignore: always_use_package_imports
 import '../controllers/create_issue_controller.dart';
 
 final issueTypesProvider = FutureProvider<List<IssueType>>((ref) async {
@@ -42,6 +45,22 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     final createIssueController = ref.read(
       createIssueControllerProvider.notifier,
     );
+    final locationState = ref.watch(locationNotifierProvider);
+
+    ref.listen<LocationState>(locationNotifierProvider, (previous, next) {
+      final hasLocationChanged =
+          previous?.issueLocation != next.issueLocation ||
+          previous?.latitude != next.latitude ||
+          previous?.longitude != next.longitude;
+
+      if (!hasLocationChanged) return;
+
+      createIssueController.updateLocation(
+        next.issueLocation,
+        next.latitude,
+        next.longitude,
+      );
+    });
 
     ref.listen<CreateIssueState>(createIssueControllerProvider, (
       previous,
@@ -49,15 +68,22 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     ) {
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
+        debugPrint(
+          'Snackbar triggered with error message: ${next.errorMessage}',
+        );
         SnackbarService.showError(context, next.errorMessage!);
+
+        createIssueController.clearErrorMessage();
       }
 
       if (next.isSuccess && next.createdIssue != null) {
-        SnackbarService.showSuccess(context, "Issue reported successfully!");
+        debugPrint('Snackbar triggered for success message.');
+        SnackbarService.showSuccess(context, 'Issue reported successfully!');
 
         // Reset form after success
         _descriptionController.clear();
         createIssueController.resetForm();
+        ref.read(locationNotifierProvider.notifier).clear();
 
         // Navigate back after success
         Future.delayed(const Duration(milliseconds: 500), () {
@@ -83,17 +109,14 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                   return Transform.scale(
                     scale: scale,
                     child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).primaryColor.withValues(alpha: 0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.category,
-                        size: 50,
-                        color: Theme.of(context).primaryColor,
+                      height: 180,
+                      width: 180,
+                      decoration: const BoxDecoration(shape: BoxShape.circle),
+                      child: Image.asset(
+                        'assets/icons/battinala_logo.png',
+                        height: 100,
+                        width: 100,
+                        fit: BoxFit.contain,
                       ),
                     ),
                   );
@@ -185,7 +208,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                                 ),
                               ),
                             ),
-                            error: (error, stack) => Center(
+                            error: (error, stack) => const Center(
                               child: Text(
                                 'Failed to load issue types',
                                 style: TextStyle(color: AppColors.adminRed),
@@ -228,7 +251,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                     onChanged: createIssueController.updateDescription,
                     decoration: InputDecoration(
                       hintText: 'Describe the issue in detail...',
-                      hintStyle: TextStyle(color: AppColors.textMuted),
+                      hintStyle: const TextStyle(color: AppColors.textMuted),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: AppColors.border),
@@ -247,7 +270,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                       filled: true,
                       fillColor: AppColors.white,
                     ),
-                    style: TextStyle(color: AppColors.textMain),
+                    style: const TextStyle(color: AppColors.textMain),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please describe the issue';
@@ -267,41 +290,35 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.border, width: 1),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: LocationPicker(
-                        onLocationSelected: (location, lat, lng) {
-                          createIssueController.updateLocation(
-                            location,
-                            lat,
-                            lng,
-                          );
-                        },
-                      ),
+                    child: const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: LocationPicker(),
                     ),
                   ),
-                  if (createIssueState.issueLocation.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.green.shade300,
-                            width: 1,
+                  if (locationState.issueLocation.isNotEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.green.shade300,
+                              width: 1,
+                            ),
                           ),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        child: Text(
-                          'Selected: ${createIssueState.issueLocation}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.green.shade700,
-                            fontWeight: FontWeight.w500,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          child: Text(
+                            'Selected: ${locationState.issueLocation}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
@@ -336,15 +353,17 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
                   // Submit Button
                   ActionButton(
-                    btnInfo: createIssueState.isLoading
-                        ? "Submitting"
-                        : "Submit Issue",
+                    width: double.infinity,
+                    label: createIssueState.isLoading
+                        ? 'Submitting'
+                        : 'Submit Issue',
 
-                    onTap: () {
+                    onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         createIssueController.submitIssue();
                       }
                     },
+                    isLoading: createIssueState.isLoading,
                   ),
 
                   const SizedBox(height: 20),

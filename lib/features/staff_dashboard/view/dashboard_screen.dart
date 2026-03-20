@@ -251,7 +251,7 @@ class StaffDashboard extends ConsumerWidget {
                 if (activeIssues.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(child: Text("No active issues")),
+                    child: Center(child: Text('No active issues')),
                   ),
 
                 if (resolvedIssues.isNotEmpty) ...[

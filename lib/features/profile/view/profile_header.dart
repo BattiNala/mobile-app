@@ -9,7 +9,7 @@ class ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      decoration: BoxDecoration(color: AppColors.primaryBlue900),
+      decoration: const BoxDecoration(color: AppColors.primaryBlue900),
       child: SafeArea(
         bottom: false,
         child: GestureDetector(

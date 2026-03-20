@@ -65,7 +65,7 @@ class ProfileInfoTile extends StatelessWidget {
           ),
         ),
         if (!isLast)
-          Divider(height: 1, color: const Color(0xFFF3F4F6), indent: 56),
+          const Divider(height: 1, color: Color(0xFFF3F4F6), indent: 56),
       ],
     );
   }

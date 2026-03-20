@@ -87,8 +87,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               children: [
                 const SizedBox(height: 40),
                 const AuthHeaderWidget(
-                  mainText: "Create Account",
-                  infoText: "Sign up to get started",
+                  mainText: 'Create Account',
+                  infoText: 'Sign up to get started',
                 ),
                 const SizedBox(height: 30),
 
@@ -169,8 +169,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                 ActionButton(
                   width: double.infinity,
                   label: authState.isLoading
-                      ? "Creating Account..."
-                      : "Sign Up",
+                      ? 'Creating Account...'
+                      : 'Sign Up',
                   backgroundColor: AppColors.primaryBlue,
                   onPressed: () {
                     if (_keyForm.currentState!.validate()) {
@@ -203,14 +203,14 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
               style: const TextStyle(fontSize: 15, letterSpacing: 0.5),
               children: [
                 TextSpan(
-                  text: "Already have an account? ",
+                  text: 'Already have an account? ',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                TextSpan(
-                  text: "Login",
+                const TextSpan(
+                  text: 'Login',
                   style: TextStyle(
                     color: AppColors.primaryBlue,
                     fontWeight: FontWeight.bold,

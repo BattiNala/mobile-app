@@ -17,7 +17,7 @@ class AuthHeaderWidget extends StatelessWidget {
       children: [
         Text(
           mainText,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
             color: AppColors.textMain,
@@ -26,7 +26,7 @@ class AuthHeaderWidget extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           infoText,
-          style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+          style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
         ),
       ],
     );

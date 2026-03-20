@@ -1,5 +1,3 @@
-// Update the state in create_issue_state.dart
-
 import 'package:batti_nala/features/citizen_dashboard/models/issue_model.dart';
 
 class CreateIssueState {

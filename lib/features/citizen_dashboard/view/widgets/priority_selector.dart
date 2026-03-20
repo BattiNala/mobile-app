@@ -11,9 +11,9 @@ class PrioritySelector extends StatelessWidget {
   });
 
   final List<Map<String, dynamic>> priorities = const [
-    {'label': 'LOW', 'color': Colors.green, 'icon': Icons.arrow_downward},
-    {'label': 'NORMAL', 'color': Colors.blue, 'icon': Icons.remove},
-    {'label': 'HIGH', 'color': Colors.red, 'icon': Icons.arrow_upward},
+    {'label': 'LOW', 'color': Colors.green},
+    {'label': 'NORMAL', 'color': Colors.blue},
+    {'label': 'HIGH', 'color': Colors.red},
   ];
 
   @override
@@ -43,12 +43,6 @@ class PrioritySelector extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Icon(
-                      priority['icon'] as IconData,
-                      color: isSelected ? color : Colors.grey[600],
-                      size: 20,
-                    ),
-                    const SizedBox(height: 4),
                     Text(
                       label,
                       style: TextStyle(

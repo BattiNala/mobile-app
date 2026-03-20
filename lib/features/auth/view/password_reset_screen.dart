@@ -74,7 +74,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Enter your email/phone to receive an OTP.',
             style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
           ),
@@ -89,7 +89,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
               prefixIcon: const Icon(Icons.email_outlined),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -130,7 +130,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Enter the OTP sent to your email/phone.',
             style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
           ),
@@ -151,7 +151,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
               prefixIcon: const Icon(Icons.verified_outlined),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -201,7 +201,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Set a new password for your account.',
             style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
           ),
@@ -228,7 +228,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -263,7 +263,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
               ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.border),
+                borderSide: const BorderSide(color: AppColors.border),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
