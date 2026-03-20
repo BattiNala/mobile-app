@@ -7,6 +7,12 @@ class ApiUrl {
   static const String login = '$baseUrl/auth/login';
   static const String citzenRegister = '$baseUrl/auth/citizen-register';
   static const String getRefreshToken = '$baseUrl/auth/refresh';
+  static const String passwordResetRequest =
+      '$baseUrl/auth/password-reset/request';
+  static const String passwordResetVerify =
+      '$baseUrl/auth/password-reset/verify';
+  static const String passwordResetConfirm =
+      '$baseUrl/auth/password-reset/confirm';
   static const String verify = '$baseUrl/auth/verify';
   static const String resendVerification = '$baseUrl/auth/resend-verification';
 
