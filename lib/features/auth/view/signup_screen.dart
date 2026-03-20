@@ -167,11 +167,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                 // Signup Button
                 ActionButton(
-                  btnInfo: authState.isLoading
+                  width: double.infinity,
+                  label: authState.isLoading
                       ? "Creating Account..."
                       : "Sign Up",
-                  btnColor: AppColors.primaryBlue,
-                  onTap: () {
+                  backgroundColor: AppColors.primaryBlue,
+                  onPressed: () {
                     if (_keyForm.currentState!.validate()) {
                       _handleSignUp();
                     }
