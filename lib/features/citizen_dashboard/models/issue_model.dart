@@ -10,6 +10,7 @@ class IssueModel {
   final String issueLocation;
   final double latitude;
   final double longitude;
+  final String? detail;
 
   IssueModel({
     required this.issueLabel,
@@ -23,6 +24,7 @@ class IssueModel {
     required this.issueLocation,
     required this.latitude,
     required this.longitude,
+    required this.detail,
   });
 
   factory IssueModel.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class IssueModel {
       issueLocation: json['issue_location'] ?? '',
       latitude: (json['latitude'] ?? 0.0).toDouble(),
       longitude: (json['longitude'] ?? 0.0).toDouble(),
+      detail: json['detail'],
     );
   }
 }

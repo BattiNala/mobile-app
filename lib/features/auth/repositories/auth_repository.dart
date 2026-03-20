@@ -5,6 +5,7 @@ import 'package:batti_nala/core/services/storage_services.dart';
 import 'package:batti_nala/features/auth/models/auth_request_model.dart';
 import 'package:batti_nala/features/auth/models/auth_response_model.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AuthRepository {
@@ -144,7 +145,9 @@ class AuthRepository {
 
   /// Logout - clears all stored tokens
   Future<void> logout() async {
-    print(" [AUTH_REPOSITORY] Logging out user and clearing tokens");
+    if (kDebugMode) {
+      print(' [AUTH_REPOSITORY] Logging out user and clearing tokens');
+    }
     await _storage.clearAll();
   }
 
@@ -181,8 +184,10 @@ class AuthRepository {
         );
       }
     } on DioException catch (e) {
-      final message =
-          _extractAuthErrorDetail(e.response?.data, e.message ?? '');
+      final message = _extractAuthErrorDetail(
+        e.response?.data,
+        e.message ?? '',
+      );
       throw AuthError(detail: message);
     }
   }
@@ -195,7 +200,10 @@ class AuthRepository {
     try {
       final response = await _dio.post(
         ApiUrl.passwordResetVerify,
-        data: PasswordResetVerifyRequest(username: username, code: code).toJson(),
+        data: PasswordResetVerifyRequest(
+          username: username,
+          code: code,
+        ).toJson(),
       );
 
       if (response.statusCode != 200) {
@@ -211,8 +219,10 @@ class AuthRepository {
         response.data as Map<String, dynamic>,
       );
     } on DioException catch (e) {
-      final message =
-          _extractAuthErrorDetail(e.response?.data, e.message ?? '');
+      final message = _extractAuthErrorDetail(
+        e.response?.data,
+        e.message ?? '',
+      );
       throw AuthError(detail: message);
     }
   }
@@ -240,8 +250,10 @@ class AuthRepository {
         );
       }
     } on DioException catch (e) {
-      final message =
-          _extractAuthErrorDetail(e.response?.data, e.message ?? '');
+      final message = _extractAuthErrorDetail(
+        e.response?.data,
+        e.message ?? '',
+      );
       throw AuthError(detail: message);
     }
   }

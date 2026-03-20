@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/networks/dio_client.dart';
-import '../models/issue_type_model.dart';
-import '../models/create_issue_request.dart';
-import '../models/issue_model.dart';
+import 'package:batti_nala/core/networks/dio_client.dart';
+import 'package:batti_nala/features/citizen_dashboard/models/issue_type_model.dart';
+import 'package:batti_nala/features/citizen_dashboard/models/create_issue_request.dart';
+import 'package:batti_nala/features/citizen_dashboard/models/issue_model.dart';
 
 final citizenIssueRepositoryProvider = Provider<CitizenIssueRepository>((ref) {
   final dioClient = ref.read(dioProvider);

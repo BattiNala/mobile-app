@@ -1,144 +1,88 @@
-import 'package:batti_nala/core/services/snackbar_services.dart';
+import 'package:batti_nala/core/utils/colors.dart';
+import 'package:batti_nala/core/widgets/action_button.dart';
+import 'package:batti_nala/features/citizen_dashboard/controllers/location_notifier.dart';
+import 'package:batti_nala/features/citizen_dashboard/view/widgets/map_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class LocationPicker extends StatefulWidget {
-  final Function(String location, double lat, double lng) onLocationSelected;
+class LocationPicker extends ConsumerWidget {
+  const LocationPicker({super.key});
 
-  const LocationPicker({super.key, required this.onLocationSelected});
+  Future<void> _openMapPicker(BuildContext context, WidgetRef ref) async {
+    final locationState = ref.read(locationNotifierProvider);
 
-  @override
-  State<LocationPicker> createState() => _LocationPickerState();
-}
-
-class _LocationPickerState extends State<LocationPicker> {
-  bool _isLoading = false;
-  String? _locationError;
-
-  Future<void> _getCurrentLocation() async {
-    setState(() {
-      _isLoading = true;
-      _locationError = null;
-    });
-
-    try {
-      // Check if location services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() {
-          _locationError = 'Location services are disabled';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // Check and request permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          setState(() {
-            _locationError = 'Location permissions are denied';
-            _isLoading = false;
-          });
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _locationError = 'Location permissions are permanently denied';
-          _isLoading = false;
-        });
-        return;
-      }
-
-      // Get current position
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-
-      // Get location name (you might want to use a geocoding service here)
-      // For now, we'll use coordinates as string
-      String locationName = await _getLocationName(position);
-
-      widget.onLocationSelected(
-        locationName,
-        position.latitude,
-        position.longitude,
-      );
-
-      setState(() {
-        _isLoading = false;
-      });
-
-      // Show success message
-      if (mounted) {
-        SnackbarService.showSuccess(
-          context,
-          "Location selected: $locationName",
-        );
-      }
-    } catch (e) {
-      setState(() {
-        _locationError = 'Error getting location: $e';
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<String> _getLocationName(Position position) async {
-    // TODO: Implement reverse geocoding
-    // You can use a service like Google Maps Geocoding or OpenStreetMap Nominatim
-    // For now, return coordinates as string
-    return '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}';
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapPicker(
+          initialLat: locationState.latitude == 0
+              ? null
+              : locationState.latitude,
+          initialLng: locationState.longitude == 0
+              ? null
+              : locationState.longitude,
+          onLocationSelected: (lat, lng, address) {
+            ref
+                .read(locationNotifierProvider.notifier)
+                .setMapLocation(
+                  address: address,
+                  latitude: lat,
+                  longitude: lng,
+                );
+          },
+        ),
+      ),
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locationState = ref.watch(locationNotifierProvider);
+    final locationNotifier = ref.read(locationNotifierProvider.notifier);
+
     return Column(
       children: [
-        ElevatedButton.icon(
-          onPressed: _isLoading ? null : _getCurrentLocation,
-          icon: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.my_location),
-          label: Text(
-            _isLoading ? 'Getting location...' : 'Use My Current Location',
-          ),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: ActionButton(
+                label: locationState.isLoading
+                    ? 'Getting location...'
+                    : 'Use My Location',
+                iconPath: Icons.my_location,
+                backgroundColor: Colors.blue,
+                textColor: Colors.white,
+                onPressed: locationState.isLoading
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+                        locationNotifier.fetchCurrentLocation();
+                      },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ActionButton(
+                label: 'Pick on Map',
+                iconPath: Icons.location_on_outlined,
+                onPressed: locationState.isLoading
+                    ? null
+                    : () => _openMapPicker(context, ref),
+                backgroundColor: AppColors.primaryBlue,
+                textColor: AppColors.adminRedLight,
+              ),
+            ),
+          ],
         ),
-        if (_locationError != null)
+        if (locationState.errorMessage != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              _locationError!,
+              locationState.errorMessage!,
               style: const TextStyle(color: Colors.red, fontSize: 12),
             ),
           ),
-        const SizedBox(height: 8),
-        OutlinedButton.icon(
-          onPressed: () {
-            // TODO: Open map picker for manual location selection
-            SnackbarService.showError(
-              context,
-              "Map picker not implemented yet",
-            );
-          },
-          icon: const Icon(Icons.map),
-          label: const Text('Pick from Map'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size.fromHeight(48),
-          ),
-        ),
       ],
     );
   }

@@ -52,17 +52,20 @@ class InfoCardWidget extends StatelessWidget {
               children: [
                 Text(
                   heading,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 20,
                     letterSpacing: 2,
                     fontWeight: FontWeight.w500,
                     color: AppColors.background,
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 Text(
                   info,
-                  style: TextStyle(fontSize: 16, color: AppColors.background),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: AppColors.background,
+                  ),
                 ),
               ],
             ),

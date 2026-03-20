@@ -25,7 +25,7 @@ class ProfileScreen extends ConsumerWidget {
     if (profileState.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-    final name = citizen?.name ?? employee?.name ?? "User";
+    final name = citizen?.name ?? employee?.name ?? 'User';
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -79,7 +79,7 @@ class ProfileScreen extends ConsumerWidget {
                               ),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(
+                            child: const Icon(
                               Icons.info_outline,
                               color: AppColors.primaryBlue,
                               size: 20,
@@ -87,7 +87,7 @@ class ProfileScreen extends ConsumerWidget {
                           ),
                           const SizedBox(width: 10),
                           const Text(
-                            "About Batti Nala",
+                            'About Batti Nala',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -101,9 +101,9 @@ class ProfileScreen extends ConsumerWidget {
 
                       /// Description
                       Text(
-                        "Batti Nala is a community-driven platform that empowers citizens to report and resolve local issues.\n\n"
-                        "Our mission is to create safer, cleaner, and more vibrant neighborhoods by connecting residents "
-                        "with local authorities and fostering a culture of civic engagement.",
+                        'Batti Nala is a community-driven platform that empowers citizens to report and resolve local issues.\n\n'
+                        'Our mission is to create safer, cleaner, and more vibrant neighborhoods by connecting residents '
+                        'with local authorities and fostering a culture of civic engagement.',
                         style: TextStyle(
                           fontSize: 14,
                           height: 1.5,
@@ -115,7 +115,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
                 ActionButton(
-                  label: "Logout",
+                  label: 'Logout',
                   backgroundColor: AppColors.adminRed,
                   onPressed: () async {
                     await ref.read(authNotifierProvider.notifier).logout();

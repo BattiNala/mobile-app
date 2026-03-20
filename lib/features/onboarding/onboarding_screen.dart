@@ -16,24 +16,24 @@ class OnboardingScreen extends StatelessWidget {
         width: width,
         height: height,
         padding: EdgeInsets.all(width * 0.0002),
-        decoration: BoxDecoration(gradient: AppColors.welcomeGradient),
+        decoration: const BoxDecoration(gradient: AppColors.welcomeGradient),
         child: SingleChildScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             children: [
               Container(
                 margin: EdgeInsets.only(top: height * 0.07),
                 child: ClipRRect(
                   child: Image.asset(
-                    "assets/icons/battinala_logo.png",
+                    'assets/icons/battinala_logo.png',
                     fit: BoxFit.cover,
                     height: 150,
                     width: 200,
                   ),
                 ),
               ),
-              Text(
-                "BattiNala",
+              const Text(
+                'BattiNala',
                 style: TextStyle(
                   fontSize: 30,
                   letterSpacing: 2,
@@ -42,7 +42,7 @@ class OnboardingScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: height * 0.01),
-              Text(
+              const Text(
                 "Nepal's Smart Utility\n Management Platform",
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -52,29 +52,29 @@ class OnboardingScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: height * 0.02),
-              InfoCardWidget(
+              const InfoCardWidget(
                 icon: Icons.location_on_outlined,
-                heading: "Real-time Reporting",
+                heading: 'Real-time Reporting',
                 info:
-                    "Report water & electricity issues instantly with GPS tracking",
+                    'Report water & electricity issues instantly with GPS tracking',
               ),
-              InfoCardWidget(
+              const InfoCardWidget(
                 icon: Icons.route_outlined,
-                heading: "Smart Route Optimization",
-                info: "Shortest maintenance routes for faster resolution",
+                heading: 'Smart Route Optimization',
+                info: 'Shortest maintenance routes for faster resolution',
               ),
-              InfoCardWidget(
+              const InfoCardWidget(
                 icon: Icons.group_outlined,
-                heading: "Community Driven",
+                heading: 'Community Driven',
                 info:
-                    "Citizens and staff working together for better infrastructure",
+                    'Citizens and staff working together for better infrastructure',
               ),
               SizedBox(height: height * 0.02),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: ActionButton(
                   width: double.infinity,
-                  label: "Get Started",
+                  label: 'Get Started',
                   onPressed: () => context.push('/login'),
                 ),
               ),

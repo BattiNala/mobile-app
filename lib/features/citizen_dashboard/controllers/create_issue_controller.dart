@@ -1,10 +1,12 @@
+import 'dart:convert';
 import 'package:batti_nala/features/citizen_dashboard/controllers/create_issue_state.dart';
 import 'package:batti_nala/features/citizen_dashboard/repository/citizen_issue_repository.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../models/create_issue_request.dart';
-import '../models/issue_model.dart';
-import '../models/issue_type_model.dart';
+import 'package:batti_nala/features/citizen_dashboard/models/create_issue_request.dart';
+import 'package:batti_nala/features/citizen_dashboard/models/issue_model.dart';
+import 'package:batti_nala/features/citizen_dashboard/models/issue_type_model.dart';
 
 final createIssueControllerProvider =
     StateNotifierProvider<CreateIssueController, CreateIssueState>((ref) {
@@ -81,6 +83,7 @@ class CreateIssueController extends StateNotifier<CreateIssueState> {
 
   Future<IssueModel?> submitIssue() async {
     if (!validateForm()) {
+      debugPrint('Form validation failed: ${state.errorMessage}');
       return null;
     }
 
@@ -97,6 +100,10 @@ class CreateIssueController extends StateNotifier<CreateIssueState> {
         longitude: state.longitude,
       );
 
+      debugPrint(
+        'CreateIssueRequest: issueTypeId=${request.issueTypeId}, priority=${request.issuePriority}, description=${request.description}, attachments=${request.attachments}, latitude=${request.latitude}, longitude=${request.longitude}',
+      );
+
       final createdIssue = await _repository.createIssue(request);
 
       state = state.copyWith(
@@ -106,18 +113,81 @@ class CreateIssueController extends StateNotifier<CreateIssueState> {
         errorMessage: null,
       );
 
+      debugPrint('Issue created successfully: $createdIssue');
       return createdIssue;
+    } on DioException catch (e) {
+      final message = _extractDioErrorDetail(e);
+      state = state.copyWith(
+        isLoading: false,
+        isSuccess: false,
+        errorMessage: message,
+      );
+      debugPrint('Error occurred while creating issue: $message');
+      return null;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         isSuccess: false,
         errorMessage: e.toString(),
       );
+
+      debugPrint('Error occurred while creating issue: ${state.errorMessage}');
       return null;
     }
   }
 
+  String _extractDioErrorDetail(DioException e) {
+    final data = e.response?.data;
+
+    // Fast path: backend returns `{ "detail": "..." }`
+    if (data is Map) {
+      final detail = data['detail'];
+      if (detail is String && detail.trim().isNotEmpty) {
+        return detail.trim();
+      }
+
+      final message = data['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+
+      return data.toString();
+    }
+
+    // Sometimes Dio returns a JSON string
+    if (data is String) {
+      final trimmed = data.trim();
+      if (trimmed.isEmpty) return e.message ?? 'An error occurred';
+
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is Map) {
+          final detail = decoded['detail'];
+          if (detail is String && detail.trim().isNotEmpty) {
+            return detail.trim();
+          }
+          final message = decoded['message'];
+          if (message is String && message.trim().isNotEmpty) {
+            return message.trim();
+          }
+        }
+      } catch (_) {
+        // Ignore JSON parse errors and fall back to raw string.
+      }
+
+      return trimmed;
+    }
+
+    return e.message ?? 'An error occurred while creating the issue.';
+  }
+
   void resetForm() {
     state = const CreateIssueState.initial();
+  }
+
+  /// Clears only the error banner/message so the snackbar can re-trigger
+  /// even for the same error text on the next submit attempt.
+  void clearErrorMessage() {
+    state = state.copyWith(clearError: true);
   }
 }

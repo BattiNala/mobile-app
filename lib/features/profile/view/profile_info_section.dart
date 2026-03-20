@@ -16,28 +16,28 @@ class ProfileInfoSection extends StatelessWidget {
       tiles.addAll([
         ProfileInfoTile(
           icon: Icons.person_outline,
-          label: "Full Name",
+          label: 'Full Name',
           value: citizen!.name,
           isFirst: true,
           isLast: false,
         ),
         ProfileInfoTile(
           icon: Icons.email_outlined,
-          label: "Email",
+          label: 'Email',
           value: citizen!.email,
           isFirst: false,
           isLast: false,
         ),
         ProfileInfoTile(
           icon: Icons.phone_outlined,
-          label: "Phone",
+          label: 'Phone',
           value: citizen!.phoneNumber,
           isFirst: false,
           isLast: false,
         ),
         ProfileInfoTile(
           icon: Icons.location_on_outlined,
-          label: "Address",
+          label: 'Address',
           value: citizen!.address.toString(),
           isFirst: false,
           isLast: true,
@@ -49,21 +49,21 @@ class ProfileInfoSection extends StatelessWidget {
       tiles.addAll([
         ProfileInfoTile(
           icon: Icons.person_outline,
-          label: "Full Name",
+          label: 'Full Name',
           value: employee!.name,
           isFirst: true,
           isLast: false,
         ),
         ProfileInfoTile(
           icon: Icons.email_outlined,
-          label: "Email",
+          label: 'Email',
           value: employee!.email,
           isFirst: false,
           isLast: false,
         ),
         ProfileInfoTile(
           icon: Icons.business_outlined,
-          label: "Department",
+          label: 'Department',
           value: employee!.department,
           isFirst: false,
           isLast: false,
