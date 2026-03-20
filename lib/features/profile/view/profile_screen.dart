@@ -115,9 +115,9 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
                 ActionButton(
-                  btnInfo: "Logout",
-                  btnColor: const Color(0xFFB91C1C),
-                  onTap: () async {
+                  label: "Logout",
+                  backgroundColor: AppColors.adminRed,
+                  onPressed: () async {
                     await ref.read(authNotifierProvider.notifier).logout();
                     if (context.mounted) {
                       context.go('/onboarding');
