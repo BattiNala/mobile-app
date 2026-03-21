@@ -1,4 +1,4 @@
-import 'package:batti_nala/core/utils/colors.dart';
+import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/citizen_dashboard/models/issue_model.dart';
 import 'package:flutter/material.dart';
 

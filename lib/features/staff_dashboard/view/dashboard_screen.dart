@@ -1,4 +1,4 @@
-import 'package:batti_nala/core/utils/colors.dart';
+import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/staff_dashboard/controller/staff_dashboard_controller.dart';
 import 'package:batti_nala/core/models/issue_model.dart';
 import 'package:batti_nala/features/staff_dashboard/model/staff_model.dart';
