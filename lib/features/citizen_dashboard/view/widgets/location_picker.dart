@@ -1,4 +1,4 @@
-import 'package:batti_nala/core/utils/colors.dart';
+import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/widgets/action_button.dart';
 import 'package:batti_nala/features/citizen_dashboard/controllers/location_notifier.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/widgets/map_picker.dart';

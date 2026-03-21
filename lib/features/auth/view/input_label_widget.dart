@@ -1,4 +1,4 @@
-import 'package:batti_nala/core/utils/colors.dart';
+import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

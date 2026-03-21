@@ -1,4 +1,4 @@
-import 'package:batti_nala/core/utils/colors.dart';
+import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/citizen_dashboard/controllers/citizen_dashboard_notifier.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/widgets/issue_card_widget.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';

@@ -1,5 +1,5 @@
 import 'package:batti_nala/core/services/snackbar_services.dart';
-import 'package:batti_nala/core/utils/colors.dart';
+import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/widgets/action_button.dart';
 import 'package:batti_nala/features/citizen_dashboard/controllers/create_issue_state.dart';
 import 'package:batti_nala/features/citizen_dashboard/models/issue_type_model.dart';

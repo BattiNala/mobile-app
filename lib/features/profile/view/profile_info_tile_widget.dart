@@ -1,4 +1,4 @@
-import 'package:batti_nala/core/utils/colors.dart';
+import 'package:batti_nala/core/constants/colors.dart';
 import 'package:flutter/material.dart';
 
 class ProfileInfoTile extends StatelessWidget {
