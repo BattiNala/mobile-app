@@ -35,6 +35,10 @@ class PasswordResetNotifier extends StateNotifier<PasswordResetState> {
     state = state.copyWith(errorMessage: null, successMessage: null);
   }
 
+  void reset() {
+    state = const PasswordResetState.initial();
+  }
+
   Future<void> requestOtp() async {
     state = state.copyWith(isLoading: true, errorMessage: null, successMessage: null);
     try {

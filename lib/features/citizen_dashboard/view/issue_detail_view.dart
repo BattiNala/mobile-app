@@ -1,378 +1,440 @@
-// import 'package:batti_nala/features/citizen_dashboard/models/issue_model.dart';
-// import 'package:flutter/material.dart';
+import 'package:batti_nala/core/constants/colors.dart';
+import 'package:batti_nala/core/widgets/loading_indicator.dart';
+import 'package:batti_nala/features/citizen_dashboard/controllers/issue_detail_notifier.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
-// class IssueDetailScreen extends StatefulWidget {
-//   final Issue issue;
-//   final Map user;
-//   final VoidCallback onBack;
-//   final VoidCallback onUpdate;
+class IssueDetailView extends ConsumerWidget {
+  final String issueLabel;
 
-//   const IssueDetailScreen({
-//     super.key,
-//     required this.issue,
-//     required this.user,
-//     required this.onBack,
-//     required this.onUpdate,
-//   });
+  const IssueDetailView({super.key, required this.issueLabel});
 
-//   @override
-//   State<IssueDetailScreen> createState() => _IssueDetailScreenState();
-// }
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(issueDetailProvider(issueLabel));
 
-// class _IssueDetailScreenState extends State<IssueDetailScreen> {
-//   bool isUpdating = false;
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: state.isLoading
+          ? const LoadingIndicator()
+          : state.errorMessage != null
+          ? Center(child: Text(state.errorMessage!))
+          : state.issue == null
+          ? const Center(child: Text('Issue not found'))
+          : _buildContent(context, state.issue!),
+    );
+  }
 
-//   void handleStatusUpdate() async {
-//     setState(() => isUpdating = true);
+  Widget _buildContent(BuildContext context, var issue) {
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(),
+      slivers: [
+        /// MODERN BRANDED HEADER
+        SliverAppBar(
+          expandedHeight: 170.0,
+          floating: false,
+          pinned: true,
+          backgroundColor: AppColors.primaryBlue900,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          flexibleSpace: FlexibleSpaceBar(
+            background: Container(
+              decoration: const BoxDecoration(color: AppColors.primaryBlue900),
+              child: Stack(
+                children: [
+                  // // Decorative Circles for Brand Vibe
+                  Positioned(
+                    right: -50,
+                    top: -20,
+                    child: CircleAvatar(
+                      radius: 100,
+                      backgroundColor: Colors.white.withValues(alpha: 0.05),
+                    ),
+                  ),
+                  Positioned(
+                    left: 20,
+                    bottom: 40,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: Text(
+                            issue.issueLabel,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          issue.issueType,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 26,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
 
-//     await Future.delayed(const Duration(seconds: 1));
+        SliverToBoxAdapter(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Visual Status Bar
+              _buildStatusBar(issue.status),
 
-//     widget.onUpdate();
-//   }
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 20,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Priority Row
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.flag_rounded,
+                          color: _getPriorityColor(issue.issuePriority),
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${issue.issuePriority} Priority'.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1,
+                            color: _getPriorityColor(issue.issuePriority),
+                          ),
+                        ),
+                      ],
+                    ),
 
-//   String getNextStatusLabel() {
-//     if (widget.issue.status == IssueStatus.pending) return "Start Working";
-//     if (widget.issue.status == IssueStatus.inProgress) {
-//       return "Mark as Resolved";
-//     }
-//     return "Completed";
-//   }
+                    const SizedBox(height: 32),
 
-//   @override
-//   Widget build(BuildContext context) {
-//     final issue = widget.issue;
+                    // Description Section
+                    const _SectionHeading(title: 'What Happened?'),
+                    const SizedBox(height: 12),
+                    Text(
+                      issue.description,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppColors.textMain.withValues(alpha: 0.9),
+                        height: 1.6,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
 
-//     return Scaffold(
-//       backgroundColor: const Color(0xfff3f4f6),
+                    const SizedBox(height: 40),
 
-//       body: SafeArea(
-//         child: Column(
-//           children: [
-//             /// HEADER
-//             Container(
-//               color: const Color(0xff1e3a8a),
-//               padding: const EdgeInsets.all(16),
-//               child: Row(
-//                 children: [
-//                   GestureDetector(
-//                     onTap: widget.onBack,
-//                     child: const Row(
-//                       children: [
-//                         Icon(Icons.arrow_back, color: Colors.white),
-//                         SizedBox(width: 6),
-//                         Text("Back", style: TextStyle(color: Colors.white)),
-//                       ],
-//                     ),
-//                   ),
-//                 ],
-//               ),
-//             ),
+                    // Location integrated snippet
+                    const _SectionHeading(title: 'Where?'),
+                    const SizedBox(height: 16),
+                    _buildLocationCard(issue.issueLocation),
 
-//             /// CONTENT
-//             Expanded(
-//               child: SingleChildScrollView(
-//                 padding: const EdgeInsets.all(20),
-//                 child: Column(
-//                   children: [
-//                     /// ISSUE HEADER
-//                     _card(
-//                       child: Row(
-//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                         children: [
-//                           Row(
-//                             children: [
-//                               Container(
-//                                 width: 48,
-//                                 height: 48,
-//                                 decoration: BoxDecoration(
-//                                   color: issue.category == "water"
-//                                       ? Colors.blue.shade100
-//                                       : Colors.yellow.shade100,
-//                                   shape: BoxShape.circle,
-//                                 ),
-//                                 child: Icon(
-//                                   issue.category == "water"
-//                                       ? Icons.water_drop
-//                                       : Icons.bolt,
-//                                   color: issue.category == "water"
-//                                       ? Colors.blue
-//                                       : Colors.orange,
-//                                 ),
-//                               ),
+                    const SizedBox(height: 40),
 
-//                               const SizedBox(width: 12),
+                    // Attachments Grid
+                    if (issue.attachments.isNotEmpty) ...[
+                      const _SectionHeading(title: 'Evidence & Photos'),
+                      const SizedBox(height: 16),
+                      _buildImageGallery(issue.attachments),
+                      const SizedBox(height: 40),
+                    ],
 
-//                               Column(
-//                                 crossAxisAlignment: CrossAxisAlignment.start,
-//                                 children: [
-//                                   Text(
-//                                     issue.category == "water"
-//                                         ? "Water Issue"
-//                                         : "Electricity Issue",
-//                                     style: const TextStyle(
-//                                       fontSize: 11,
-//                                       color: Colors.grey,
-//                                     ),
-//                                   ),
-//                                   const SizedBox(height: 4),
-//                                   Text(
-//                                     "Issue #${issue.id}",
-//                                     style: const TextStyle(
-//                                       fontSize: 18,
-//                                       fontWeight: FontWeight.bold,
-//                                     ),
-//                                   ),
-//                                 ],
-//                               ),
-//                             ],
-//                           ),
+                    // Footer with meta-info
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildMetaRow(
+                            Icons.history_toggle_off_rounded,
+                            'Submitted on',
+                            _formatDay(issue.createdAt),
+                          ),
+                          if (issue.assignedTo != null) ...[
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              child: Divider(height: 1, color: Colors.white),
+                            ),
+                            _buildMetaRow(
+                              Icons.person_pin_rounded,
+                              'Handling by',
+                              issue.assignedTo!,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 60),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 
-//                           // _statusBadge(issue.status),
-//                         ],
-//                       ),
-//                     ),
+  Widget _buildStatusBar(String status) {
+    final color = _getStatusColor(status);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        border: Border(bottom: BorderSide(color: color.withValues(alpha: 0.1))),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(_getStatusIcon(status), color: Colors.white, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _getStatusLabel(status).toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: color,
+                    letterSpacing: 1,
+                  ),
+                ),
+                Text(
+                  _getStatusDescription(status),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary.withValues(alpha: 0.7),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-//                     const SizedBox(height: 16),
+  Widget _buildLocationCard(String location) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.blue[50],
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.map_rounded,
+                color: AppColors.primaryBlue,
+                size: 40,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.location_on_rounded,
+                  color: AppColors.adminRed,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    location,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textMain,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-//                     /// DESCRIPTION
-//                     _card(
-//                       child: Column(
-//                         crossAxisAlignment: CrossAxisAlignment.start,
-//                         children: [
-//                           const Text(
-//                             "Description",
-//                             style: TextStyle(fontSize: 12, color: Colors.grey),
-//                           ),
-//                           const SizedBox(height: 6),
-//                           Text(issue.description),
-//                         ],
-//                       ),
-//                     ),
+  Widget _buildImageGallery(List<String> urls) {
+    return GridView.builder(
+      shrinkWrap: true,
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: 12,
+        crossAxisSpacing: 12,
+        childAspectRatio: 1.2,
+      ),
+      itemCount: urls.length,
+      itemBuilder: (context, index) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: CachedNetworkImage(
+            imageUrl: urls[index],
+            fit: BoxFit.cover,
+            placeholder: (context, url) => Shimmer.fromColors(
+              baseColor: Colors.grey[200]!,
+              highlightColor: Colors.white,
+              child: Container(color: Colors.white),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-//                     const SizedBox(height: 16),
+  Widget _buildMetaRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppColors.textSecondary),
+        const SizedBox(width: 12),
+        Text(
+          '$label   ',
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textMain,
+          ),
+        ),
+      ],
+    );
+  }
 
-//                     /// LOCATION
-//                     _card(
-//                       child: Column(
-//                         crossAxisAlignment: CrossAxisAlignment.start,
-//                         children: [
-//                           const Row(
-//                             children: [
-//                               Icon(Icons.location_on, size: 16),
-//                               SizedBox(width: 6),
-//                               Text(
-//                                 "Location",
-//                                 style: TextStyle(
-//                                   fontSize: 12,
-//                                   color: Colors.grey,
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
+  // Refined Color Helpers
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'OPEN':
+        return AppColors.adminRed;
+      case 'IN_PROGRESS':
+        return const Color(0xFF3B82F6);
+      case 'ASSIGNED':
+        return const Color(0xFF8B5CF6);
+      case 'RESOLVED':
+        return const Color(0xFF10B981);
+      default:
+        return AppColors.textMuted;
+    }
+  }
 
-//                           const SizedBox(height: 8),
+  Color _getPriorityColor(String p) {
+    return p.toUpperCase() == 'HIGH'
+        ? AppColors.adminRed
+        : AppColors.primaryBlue;
+  }
 
-//                           Text(issue.locationName),
+  IconData _getStatusIcon(String s) {
+    switch (s.toLowerCase()) {
+      case 'open':
+        return Icons.bolt_rounded;
+      case 'in_progress':
+        return Icons.published_with_changes_rounded;
+      case 'assigned':
+        return Icons.verified_user_rounded;
+      case 'resolved':
+        return Icons.check_circle_rounded;
+      default:
+        return Icons.info_rounded;
+    }
+  }
 
-//                           const SizedBox(height: 4),
+  String _getStatusLabel(String s) => s.replaceAll('_', ' ');
 
-//                           // Text(
-//                           //   "${issue.location.lat}, ${issue.location.lng}",
-//                           //   style: const TextStyle(
-//                           //     fontSize: 12,
-//                           //     color: Colors.grey,
-//                           //   ),
-//                           // ),
-//                           const SizedBox(height: 8),
+  String _getStatusDescription(String s) {
+    switch (s.toLowerCase()) {
+      case 'open':
+        return 'Reported and waiting for review.';
+      case 'assigned':
+        return 'Technician is taking ownership.';
+      case 'in_progress':
+        return 'Work is currently being executed.';
+      case 'resolved':
+        return 'Verified as fixed by municipality.';
+      default:
+        return 'No status updates yet.';
+    }
+  }
 
-//                           const Text(
-//                             "View on Map",
-//                             style: TextStyle(
-//                               fontSize: 12,
-//                               color: Colors.blue,
-//                               fontWeight: FontWeight.w500,
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                     ),
+  String _formatDay(DateTime dt) => '${dt.day}/${dt.month}/${dt.year}';
+}
 
-//                     const SizedBox(height: 16),
+class _SectionHeading extends StatelessWidget {
+  final String title;
+  const _SectionHeading({required this.title});
 
-//                     /// REPORT INFO
-//                     _card(
-//                       child: Column(
-//                         crossAxisAlignment: CrossAxisAlignment.start,
-//                         children: [
-//                           const Text(
-//                             "Report Information",
-//                             style: TextStyle(fontSize: 12, color: Colors.grey),
-//                           ),
-
-//                           const SizedBox(height: 12),
-
-//                           Row(
-//                             children: [
-//                               const Icon(
-//                                 Icons.person,
-//                                 size: 18,
-//                                 color: Colors.grey,
-//                               ),
-//                               const SizedBox(width: 10),
-//                               Column(
-//                                 crossAxisAlignment: CrossAxisAlignment.start,
-//                                 children: [
-//                                   const Text(
-//                                     "Reported by",
-//                                     style: TextStyle(
-//                                       fontSize: 11,
-//                                       color: Colors.grey,
-//                                     ),
-//                                   ),
-//                                   Text(issue.reportedAt),
-//                                 ],
-//                               ),
-//                             ],
-//                           ),
-
-//                           const SizedBox(height: 12),
-
-//                           Row(
-//                             children: [
-//                               const Icon(
-//                                 Icons.calendar_today,
-//                                 size: 18,
-//                                 color: Colors.grey,
-//                               ),
-//                               const SizedBox(width: 10),
-//                               Column(
-//                                 crossAxisAlignment: CrossAxisAlignment.start,
-//                                 children: [
-//                                   const Text(
-//                                     "Reported at",
-//                                     style: TextStyle(
-//                                       fontSize: 11,
-//                                       color: Colors.grey,
-//                                     ),
-//                                   ),
-//                                   Text(issue.reportedAt),
-//                                 ],
-//                               ),
-//                             ],
-//                           ),
-//                         ],
-//                       ),
-//                     ),
-
-//                     const SizedBox(height: 16),
-
-//                     /// STAFF ACTION
-//                     if (widget.user["role"] == "staff" &&
-//                         issue.status != issue.resolved)
-//                       _card(
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             const Text(
-//                               "Actions",
-//                               style: TextStyle(
-//                                 fontSize: 12,
-//                                 color: Colors.grey,
-//                               ),
-//                             ),
-
-//                             const SizedBox(height: 10),
-
-//                             SizedBox(
-//                               width: double.infinity,
-//                               child: ElevatedButton(
-//                                 onPressed: isUpdating
-//                                     ? null
-//                                     : handleStatusUpdate,
-//                                 style: ElevatedButton.styleFrom(
-//                                   backgroundColor: Colors.red.shade700,
-//                                   padding: const EdgeInsets.symmetric(
-//                                     vertical: 14,
-//                                   ),
-//                                 ),
-//                                 child: isUpdating
-//                                     ? const SizedBox(
-//                                         height: 18,
-//                                         width: 18,
-//                                         child: CircularProgressIndicator(
-//                                           color: Colors.white,
-//                                           strokeWidth: 2,
-//                                         ),
-//                                       )
-//                                     : Text(getNextStatusLabel()),
-//                               ),
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-
-//                     const SizedBox(height: 16),
-
-//                     /// RESOLVED MESSAGE
-//                     if (issue.status == IssueStatus.resolved)
-//                       Container(
-//                         padding: const EdgeInsets.all(16),
-//                         decoration: BoxDecoration(
-//                           color: Colors.green.shade50,
-//                           border: Border.all(color: Colors.green.shade200),
-//                           borderRadius: BorderRadius.circular(12),
-//                         ),
-//                         child: Column(
-//                           children: const [
-//                             CircleAvatar(
-//                               radius: 22,
-//                               backgroundColor: Colors.green,
-//                               child: Icon(Icons.check, color: Colors.white),
-//                             ),
-//                             SizedBox(height: 10),
-//                             Text(
-//                               "This issue has been resolved!",
-//                               style: TextStyle(color: Colors.green),
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                   ],
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _card({required Widget child}) {
-//     return Container(
-//       width: double.infinity,
-//       padding: const EdgeInsets.all(18),
-//       decoration: BoxDecoration(
-//         color: Colors.white,
-//         borderRadius: BorderRadius.circular(10),
-//         border: Border.all(color: const Color(0xffe5e7eb)),
-//       ),
-//       child: child,
-//     );
-//   }
-
-//   Widget _statusBadge(String status) {
-//     Color color = Colors.orange;
-
-//     if (status == "resolved") color = Colors.green;
-//     if (status == "in-progress") color = Colors.blue;
-
-//     return Container(
-//       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-//       decoration: BoxDecoration(
-//         color: color.withOpacity(.15),
-//         borderRadius: BorderRadius.circular(20),
-//       ),
-//       child: Text(status, style: TextStyle(color: color, fontSize: 12)),
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w900,
+        color: AppColors.textMain,
+      ),
+    );
+  }
+}

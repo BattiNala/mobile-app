@@ -188,7 +188,6 @@ class CitizenDashboardView extends ConsumerWidget {
             /// HEADER
             SliverToBoxAdapter(
               child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 50, 20, 30),
                 decoration: BoxDecoration(
                   gradient: AppColors.welcomeGradient,
                   boxShadow: [
@@ -199,73 +198,96 @@ class CitizenDashboardView extends ConsumerWidget {
                     ),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// Welcome row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
+                child: SafeArea(
+                  bottom: false,
+                  child: Column(
+                    children: [
+                      /// Nepal Top Border
+                      Container(
+                        height: 4,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primaryBlue900,
+                              AppColors.adminRed,
+                              Color(0xFF006B3F),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Welcome Back,',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 13,
-                              ),
+                            /// User Info Row
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Welcome Back,',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      citizenProfile?.name ?? 'User',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                CircleAvatar(
+                                  radius: 22,
+                                  backgroundColor: Colors.white24,
+                                  child: GestureDetector(
+                                    onTap: () => context.push('/profile'),
+                                    child: const Icon(
+                                      Icons.person,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              citizenProfile?.name ?? 'User',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w600,
-                              ),
+
+                            const SizedBox(height: 24),
+
+                            /// Stats
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _statCard(
+                                    'Pending',
+                                    dashboardController.pendingCount,
+                                    Icons.access_time,
+                                    Colors.orange,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: _statCard(
+                                    'Resolved',
+                                    dashboardController.resolvedCount,
+                                    Icons.check_circle,
+                                    Colors.green,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: Colors.white24,
-                          child: GestureDetector(
-                            onTap: () => context.push('/profile'),
-                            child: const Icon(
-                              Icons.person,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    /// Stats
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _statCard(
-                            'Pending',
-                            dashboardController.pendingCount,
-                            Icons.access_time,
-                            Colors.orange,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: _statCard(
-                            'Resolved',
-                            dashboardController.resolvedCount,
-                            Icons.check_circle,
-                            Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -311,7 +333,7 @@ class CitizenDashboardView extends ConsumerWidget {
                         final report = reports[index];
                         return InkWell(
                           onTap: () {
-                            // Navigate to issue details
+                            context.push('/issue-detail/${report.issueLabel}');
                           },
                           child: IssueCardWidget(issue: report),
                         );

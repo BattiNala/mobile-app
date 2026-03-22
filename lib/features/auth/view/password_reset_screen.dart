@@ -29,6 +29,11 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
   @override
   void initState() {
     super.initState();
+    // Always reset to the first step when opening the screen,
+    // so a previously completed flow doesn't show the reset-password form.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(passwordResetProvider.notifier).reset();
+    });
   }
 
   @override

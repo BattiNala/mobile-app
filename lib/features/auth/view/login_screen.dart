@@ -29,8 +29,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       try {
         await authNotifier.login(authState.email ?? '', authState.password);
-      } catch (e) {
-        print('[LOGIN_SCREEN] Login error: $e');
+      } catch (_) {
+        // Error is shown via snackbar through the state listener
       }
     }
   }

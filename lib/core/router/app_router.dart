@@ -10,6 +10,7 @@ import 'package:batti_nala/features/citizen_dashboard/view/citizen_dashboard_vie
 import 'package:batti_nala/features/staff_dashboard/view/dashboard_screen.dart';
 import 'package:batti_nala/features/staff_dashboard/model/staff_model.dart';
 import 'package:batti_nala/features/auth/view/password_reset_screen.dart';
+import 'package:batti_nala/features/citizen_dashboard/view/issue_detail_view.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final user = ref.watch(authNotifierProvider.select((state) => state.user));
@@ -55,6 +56,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/issue-create',
         builder: (context, state) => const ReportIssueScreen(),
       ),
+      GoRoute(
+        path: '/issue-detail/:label',
+        builder: (context, state) {
+          final label = state.pathParameters['label']!;
+          return IssueDetailView(issueLabel: label);
+        },
+      ),
     ],
     redirect: (context, state) {
       final isOnOnboarding = state.matchedLocation == '/onboarding';
@@ -64,36 +72,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/password-reset';
       final isProfileRoute = state.matchedLocation == '/profile';
 
-      // If user is logged in, don't show onboarding
+      // Logged-in user shouldn't see onboarding or auth screens
       if (user != null && isOnOnboarding) {
-        if (user.role == 'citizen') {
-          return '/citizen-dashboard';
-        } else if (user.role == 'staff') {
-          return '/staff-dashboard';
-        }
+        return user.role == 'citizen' ? '/citizen-dashboard' : '/staff-dashboard';
       }
 
       // Allow profile route only if logged in
       if (isProfileRoute) {
-        if (user == null) {
-          return '/onboarding';
-        }
-        return null;
+        return user == null ? '/login' : null;
       }
 
-      // If not logged in, allow login/signup/onboarding
+      // If not logged in, allow auth routes and onboarding
       if (user == null) {
         final shouldAllow = isAuthRoute || isOnOnboarding;
-        return shouldAllow ? null : '/onboarding';
+        // Redirect to login (not onboarding) after logout
+        return shouldAllow ? null : '/login';
       }
 
-      // If logged in but on auth routes, redirect to dashboard
+      // If logged in but trying to access auth routes, redirect to dashboard
       if (isAuthRoute) {
-        if (user.role == 'citizen') {
-          return '/citizen-dashboard';
-        } else if (user.role == 'staff') {
-          return '/staff-dashboard';
-        }
+        return user.role == 'citizen' ? '/citizen-dashboard' : '/staff-dashboard';
       }
 
       return null;

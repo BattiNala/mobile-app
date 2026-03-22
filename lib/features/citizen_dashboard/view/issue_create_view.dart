@@ -1,6 +1,7 @@
 import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/widgets/action_button.dart';
+import 'package:batti_nala/core/widgets/loading_indicator.dart';
 import 'package:batti_nala/features/citizen_dashboard/controllers/create_issue_state.dart';
 import 'package:batti_nala/features/citizen_dashboard/models/issue_type_model.dart';
 import 'package:batti_nala/features/citizen_dashboard/repository/citizen_issue_repository.dart';
@@ -95,60 +96,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     });
 
     if (ref.watch(issueTypesProvider).isLoading) {
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Animated container with icon
-              TweenAnimationBuilder<double>(
-                tween: Tween<double>(begin: 0.8, end: 1.0),
-                duration: const Duration(milliseconds: 800),
-                curve: Curves.easeInOutBack,
-                builder: (context, scale, child) {
-                  return Transform.scale(
-                    scale: scale,
-                    child: Container(
-                      height: 180,
-                      width: 180,
-                      decoration: const BoxDecoration(shape: BoxShape.circle),
-                      child: Image.asset(
-                        'assets/icons/battinala_logo.png',
-                        height: 100,
-                        width: 100,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 24),
-
-              // Text with shimmer
-              const Text(
-                'Loading',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Custom progress indicator
-              SizedBox(
-                width: 200,
-                child: LinearProgressIndicator(
-                  backgroundColor: Colors.grey[200],
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).primaryColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const Scaffold(body: LoadingIndicator());
     }
 
     return Scaffold(

@@ -59,4 +59,10 @@ class CitizenIssueRepository {
     final issues = response.data['issues'] as List? ?? [];
     return issues.map((json) => IssueModel.fromJson(json)).toList();
   }
+
+  /// Get specific issue detail
+  Future<IssueModel> getIssueDetail(String issueLabel) async {
+    final response = await _dioClient.get('/issues/$issueLabel');
+    return IssueModel.fromJson(response.data);
+  }
 }
