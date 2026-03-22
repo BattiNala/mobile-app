@@ -40,7 +40,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       state = state.copyWith(user: user, isLoading: false);
     } on AuthError catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.detail);
+      // Reset to null first so the listener fires even if the same error repeats
+      state = state.copyWith(isLoading: false, errorMessage: null);
+      state = state.copyWith(errorMessage: e.detail);
       rethrow;
     }
   }
@@ -77,7 +79,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
     } on AuthError catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.detail);
+      state = state.copyWith(isLoading: false, errorMessage: null);
+      state = state.copyWith(errorMessage: e.detail);
       rethrow;
     }
   }

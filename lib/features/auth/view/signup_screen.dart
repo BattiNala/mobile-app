@@ -26,14 +26,18 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     final authNotifier = ref.read(authNotifierProvider.notifier);
     if (_keyForm.currentState?.validate() ?? false) {
       final authState = ref.read(authNotifierProvider);
-      await authNotifier.register(
-        username: authState.name,
-        password: authState.password,
-        name: authState.name,
-        phoneNumber: authState.phone,
-        email: authState.email ?? '',
-        homeAddress: authState.homeAddress,
-      );
+      try {
+        await authNotifier.register(
+          username: authState.name,
+          password: authState.password,
+          name: authState.name,
+          phoneNumber: authState.phone,
+          email: authState.email ?? '',
+          homeAddress: authState.homeAddress,
+        );
+      } catch (_) {
+        // Error is shown via snackbar through the state listener
+      }
     }
   }
 
@@ -161,6 +165,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   onChanged: (val) => ref
                       .read(authNotifierProvider.notifier)
                       .updateConfirmPassword(val),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Home Address Field (Optional)
+                InputLabelWidget(
+                  icon: FontAwesomeIcons.locationDot,
+                  inputType: TextInputType.streetAddress,
+                  label: 'Home Address (Optional)',
+                  hint: 'e.g. Kathmandu, Ward 10',
+                  textCapitalization: TextCapitalization.words,
+                  onChanged: (val) => ref
+                      .read(authNotifierProvider.notifier)
+                      .updateHomeAddress(val),
                 ),
 
                 const SizedBox(height: 20),

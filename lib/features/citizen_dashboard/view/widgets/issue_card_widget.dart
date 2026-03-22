@@ -66,17 +66,15 @@ class IssueCardWidget extends StatelessWidget {
                         width: 52,
                         height: 52,
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              accentColor.withValues(alpha: 0.95),
-                              accentColor.withValues(alpha: 0.18),
-                            ],
-                          ),
+                          border: Border.all(color: AppColors.borderHover),
+                          color: AppColors.background,
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        child: Icon(typeIcon, color: AppColors.white, size: 26),
+                        child: Icon(
+                          typeIcon,
+                          color: AppColors.primaryBlue,
+                          size: 26,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -129,33 +127,6 @@ class IssueCardWidget extends StatelessWidget {
                     ],
                   ),
 
-                  const SizedBox(height: 12),
-                  if (issue.issueLocation.isNotEmpty) ...[
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 16,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            issue.issueLocation,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-
                   Text(
                     issue.description,
                     maxLines: 3,
@@ -177,9 +148,6 @@ class IssueCardWidget extends StatelessWidget {
                         label: issue.issuePriority.toUpperCase(),
                         color: priorityColor,
                       ),
-                      if (issue.assignedTo != null) ...[
-                        _buildAssignedChip(label: issue.assignedTo!),
-                      ],
                     ],
                   ),
                 ],
@@ -242,25 +210,6 @@ class IssueCardWidget extends StatelessWidget {
       label: Text(
         'Priority: $label',
         style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
-      backgroundColor: color.withValues(alpha: 0.10),
-      side: BorderSide(color: color.withValues(alpha: 0.25)),
-      shape: const StadiumBorder(),
-      padding: EdgeInsets.zero,
-    );
-  }
-
-  Chip _buildAssignedChip({required String label}) {
-    const color = Color(0xFF7C3AED); // Brand-ish violet
-    return Chip(
-      avatar: const Icon(Icons.person, size: 16, color: color),
-      label: Text(
-        'Assigned: $label',
-        style: const TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
           color: color,

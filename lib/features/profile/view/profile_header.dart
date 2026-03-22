@@ -12,15 +12,29 @@ class ProfileHeader extends StatelessWidget {
       decoration: const BoxDecoration(color: AppColors.primaryBlue900),
       child: SafeArea(
         bottom: false,
-        child: GestureDetector(
-          onTap: () => context.pop(),
-          child: const Row(
-            children: [
-              Icon(Icons.arrow_back, color: Colors.white, size: 22),
-              SizedBox(width: 15),
-              Text('Back', style: TextStyle(color: Colors.white, fontSize: 18)),
-            ],
-          ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: GestureDetector(
+                onTap: () => context.pop(),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
+            const Text(
+              'Profile',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
       ),
     );
