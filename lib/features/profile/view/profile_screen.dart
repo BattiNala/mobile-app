@@ -13,6 +13,31 @@ import 'package:go_router/go_router.dart';
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => context.pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await ref.read(authNotifierProvider.notifier).logout();
+              if (context.mounted) {
+                context.go('/onboarding');
+              }
+            },
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
@@ -117,12 +142,7 @@ class ProfileScreen extends ConsumerWidget {
                 ActionButton(
                   label: 'Logout',
                   backgroundColor: AppColors.adminRed,
-                  onPressed: () async {
-                    await ref.read(authNotifierProvider.notifier).logout();
-                    if (context.mounted) {
-                      context.go('/onboarding');
-                    }
-                  },
+                  onPressed: () => _showLogoutDialog(context, ref),
                 ),
               ],
             ),

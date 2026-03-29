@@ -1,7 +1,8 @@
-import 'package:batti_nala/features/citizen_dashboard/models/issue_type_model.dart';
-import 'package:batti_nala/features/citizen_dashboard/repository/citizen_issue_repository.dart';
-import 'package:batti_nala/features/citizen_dashboard/models/issue_model.dart';
+import 'package:batti_nala/features/issue_report/models/issue_type_model.dart';
+import 'package:batti_nala/features/issue_report/repository/issue_repository.dart';
+import 'package:batti_nala/features/issue_report/models/issue_model.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
+import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class CitizenDashboardController extends StateNotifier<List<IssueModel>> {
@@ -10,14 +11,17 @@ class CitizenDashboardController extends StateNotifier<List<IssueModel>> {
   }
 
   final Ref ref;
-  final CitizenIssueRepository _repository;
+  final IssueRepository _repository;
 
   // Load issues from API
   Future<void> _loadIssues() async {
+    if (ref.read(authNotifierProvider).user == null) return;
     try {
-      final issues = await _repository.getUserIssues();
+      final issues = await _repository.getCitizenIssues();
+      if (!mounted) return;
       state = issues;
     } catch (e) {
+      if (!mounted) return;
       state = [];
     }
   }
@@ -39,11 +43,11 @@ class CitizenDashboardController extends StateNotifier<List<IssueModel>> {
 
 final dashboardProvider =
     StateNotifierProvider<CitizenDashboardController, List<IssueModel>>((ref) {
-      final repository = ref.read(citizenIssueRepositoryProvider);
+      final repository = ref.read(issueRepositoryProvider);
       return CitizenDashboardController(ref, repository);
     });
 
 final issueTypeProvider = FutureProvider<IssueTypeModel>((ref) {
-  final repository = ref.read(citizenIssueRepositoryProvider);
+  final repository = ref.read(issueRepositoryProvider);
   return repository.getIssueTypes();
 });

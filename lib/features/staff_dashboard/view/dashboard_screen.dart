@@ -1,32 +1,37 @@
 import 'package:batti_nala/core/constants/colors.dart';
-import 'package:batti_nala/features/staff_dashboard/controller/staff_dashboard_controller.dart';
-import 'package:batti_nala/core/models/issue_model.dart';
-import 'package:batti_nala/features/staff_dashboard/model/staff_model.dart';
+import 'package:batti_nala/features/staff_dashboard/controller/employee_dashboard_notifier.dart';
+import 'package:batti_nala/features/issue_report/models/issue_model.dart';
+import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
 import 'package:batti_nala/features/staff_dashboard/view/status_badge_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class StaffDashboard extends ConsumerWidget {
-  final Staff staff;
-  final VoidCallback onViewMap;
-  final Function(Issue) onViewIssue;
-  final VoidCallback onNavigateToProfile;
-
-  const StaffDashboard({
-    super.key,
-    required this.staff,
-    required this.onViewMap,
-    required this.onViewIssue,
-    required this.onNavigateToProfile,
-  });
+  const StaffDashboard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.read(staffDashboardProvider.notifier);
+    final issues = ref.watch(employeeDashboardProvider);
+    final dashboardController = ref.read(employeeDashboardProvider.notifier);
+    final profileState = ref.watch(profileNotifierProvider);
+    final employee = profileState.employeeProfile;
 
-    final activeIssues = controller.activeIssues;
-    final resolvedIssues = controller.resolvedIssues;
+    if (employee == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final activeIssues = issues
+        .where(
+          (i) =>
+              i.status.toUpperCase() != 'RESOLVED' &&
+              i.status.toUpperCase() != 'CLOSED',
+        )
+        .toList();
+    final resolvedIssues = issues
+        .where((i) => i.status.toUpperCase() == 'RESOLVED')
+        .toList();
 
     final size = MediaQuery.of(context).size;
     final bool isTablet = size.width > 600;
@@ -93,7 +98,7 @@ class StaffDashboard extends ConsumerWidget {
                                     const SizedBox(height: 4),
 
                                     Text(
-                                      staff.name,
+                                      employee.name,
                                       style: TextStyle(
                                         fontSize: isTablet ? 24 : 18,
                                         fontWeight: FontWeight.w600,
@@ -105,7 +110,7 @@ class StaffDashboard extends ConsumerWidget {
                                     const SizedBox(height: 2),
 
                                     Text(
-                                      staff.department,
+                                      '${employee.department.toUpperCase()} DEPARTMENT',
                                       style: TextStyle(
                                         fontSize: isSmallPhone ? 10 : 12,
                                         color: Colors.blue[200],
@@ -116,7 +121,7 @@ class StaffDashboard extends ConsumerWidget {
                               ),
 
                               GestureDetector(
-                                onTap: onNavigateToProfile,
+                                onTap: () => context.push('/profile'),
                                 child: Container(
                                   width: isTablet ? 48 : 40,
                                   height: isTablet ? 48 : 40,
@@ -167,7 +172,7 @@ class StaffDashboard extends ConsumerWidget {
                                         ),
                                       ),
                                       Text(
-                                        controller.totalIssues.toString(),
+                                        issues.length.toString(),
                                         style: TextStyle(
                                           fontSize: isTablet ? 32 : 28,
                                           fontWeight: FontWeight.w500,
@@ -183,21 +188,23 @@ class StaffDashboard extends ConsumerWidget {
                                     children: [
                                       _statItem(
                                         label: 'Pending',
-                                        count: controller.pendingCount,
+                                        count: dashboardController.pendingCount,
                                         color: Colors.orange[300]!,
                                         isTablet: isTablet,
                                       ),
 
                                       _statItem(
                                         label: 'In Progress',
-                                        count: controller.inProgressCount,
+                                        count:
+                                            dashboardController.inProgressCount,
                                         color: Colors.blue[300]!,
                                         isTablet: isTablet,
                                       ),
 
                                       _statItem(
                                         label: 'Resolved',
-                                        count: controller.resolvedCount,
+                                        count:
+                                            dashboardController.resolvedCount,
                                         color: Colors.green[300]!,
                                         isTablet: isTablet,
                                       ),
@@ -222,13 +229,24 @@ class StaffDashboard extends ConsumerWidget {
 
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                Text(
-                  'Active Issues',
-                  style: TextStyle(
-                    fontSize: isTablet ? 20 : 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[900],
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Active Issues',
+                      style: TextStyle(
+                        fontSize: isTablet ? 20 : 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[900],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        height: 2,
+                        color: Colors.blue.withValues(alpha: 0.2),
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 16),
@@ -242,16 +260,38 @@ class StaffDashboard extends ConsumerWidget {
                     child: _issueCard(
                       issue: issue,
                       index: index + 1,
-                      onTap: () => onViewIssue(issue),
+                      onTap: () => context.push(
+                        '/employee-issue-detail/${issue.issueLabel}',
+                      ),
                       isTablet: isTablet,
                     ),
                   );
                 }),
 
                 if (activeIssues.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 40),
-                    child: Center(child: Text('No active issues')),
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 64.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.assignment_outlined,
+                            size: 80,
+                            color: Colors.grey.shade300,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No reports found',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
 
                 if (resolvedIssues.isNotEmpty) ...[
@@ -285,7 +325,9 @@ class StaffDashboard extends ConsumerWidget {
                       child: _issueCard(
                         issue: issue,
                         isResolved: true,
-                        onTap: () => onViewIssue(issue),
+                        onTap: () => context.push(
+                          '/employee-issue-detail/${issue.issueLabel}',
+                        ),
                         isTablet: isTablet,
                       ),
                     );
@@ -338,7 +380,7 @@ class StaffDashboard extends ConsumerWidget {
   }
 
   Widget _issueCard({
-    required Issue issue,
+    required IssueModel issue,
     required VoidCallback onTap,
     int? index,
     bool isResolved = false,
@@ -360,7 +402,7 @@ class StaffDashboard extends ConsumerWidget {
             Row(
               children: [
                 Icon(
-                  issue.category == IssueCategory.water
+                  issue.issueType.toLowerCase().contains('water')
                       ? FontAwesomeIcons.droplet
                       : FontAwesomeIcons.bolt,
                   color: Colors.blue,
@@ -375,7 +417,7 @@ class StaffDashboard extends ConsumerWidget {
                       Text(issue.description),
                       const SizedBox(height: 4),
                       Text(
-                        issue.locationName,
+                        issue.issueLocation,
                         style: const TextStyle(fontSize: 12),
                       ),
                     ],
@@ -392,7 +434,9 @@ class StaffDashboard extends ConsumerWidget {
                 StatusBadge(status: issue.status),
 
                 Text(
-                  isResolved ? issue.reportedAt : 'by ${issue.reportedBy}',
+                  isResolved
+                      ? '${issue.createdAt.day}/${issue.createdAt.month}/${issue.createdAt.year}'
+                      : 'Ref: ${issue.issueLabel}',
                   style: const TextStyle(fontSize: 11),
                 ),
               ],

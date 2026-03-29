@@ -1,4 +1,4 @@
-import 'package:batti_nala/features/citizen_dashboard/models/issue_type_model.dart';
+import 'package:batti_nala/features/issue_report/models/issue_type_model.dart';
 import 'package:flutter/material.dart';
 
 class IssueTypeSelector extends StatelessWidget {

@@ -36,6 +36,7 @@ class SnackbarService {
     String? actionLabel,
     VoidCallback? onAction,
   ) {
+    if (!context.mounted) return;
     final overlay = Overlay.of(context);
     final overlayEntry = OverlayEntry(
       builder: (context) => Positioned(

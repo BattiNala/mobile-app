@@ -1,5 +1,5 @@
 import 'package:batti_nala/core/constants/colors.dart';
-import 'package:batti_nala/features/citizen_dashboard/models/issue_model.dart';
+import 'package:batti_nala/features/issue_report/models/issue_model.dart';
 import 'package:flutter/material.dart';
 
 class IssueCardWidget extends StatelessWidget {
@@ -110,7 +110,7 @@ class IssueCardWidget extends StatelessWidget {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              issue.issueType,
+                              issue.issueType.toUpperCase(),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -127,18 +127,21 @@ class IssueCardWidget extends StatelessWidget {
                     ],
                   ),
 
-                  Text(
-                    issue.description,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textMain,
-                      height: 1.45,
+                  Padding(
+                    padding: const EdgeInsets.only(left: 10, top: 8.0),
+                    child: Text(
+                      'Description: ${issue.description}',
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textMain,
+                        height: 1.45,
+                      ),
                     ),
                   ),
 
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,

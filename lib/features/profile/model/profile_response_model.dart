@@ -44,14 +44,16 @@ class EmployeeProfile {
   final String email;
   final String phoneNumber;
   final String department;
-  final String employeeId;
+  final String teamName;
+  final String currentStatus;
 
   EmployeeProfile({
     required this.name,
     required this.email,
     required this.phoneNumber,
     required this.department,
-    required this.employeeId,
+    required this.teamName,
+    required this.currentStatus,
   });
 
   factory EmployeeProfile.fromJson(Map<String, dynamic> json) {
@@ -59,8 +61,9 @@ class EmployeeProfile {
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       phoneNumber: json['phone_number'] ?? '',
-      department: json['department'] ?? '',
-      employeeId: json['employee_id'] ?? '',
+      department: json['department_name'] ?? '',
+      teamName: json['team_name'] ?? '',
+      currentStatus: json['current_status'] ?? '',
     );
   }
 
@@ -70,12 +73,8 @@ class EmployeeProfile {
       'email': email,
       'phone_number': phoneNumber,
       'department': department,
-      'employee_id': employeeId,
+      'employee_id': teamName,
+      'current_status': currentStatus,
     };
-  }
-
-  @override
-  String toString() {
-    return 'EmployeeProfile(name: $name, email: $email, phoneNumber: $phoneNumber, department: $department, employeeId: $employeeId)';
   }
 }

@@ -64,9 +64,23 @@ class ProfileInfoSection extends StatelessWidget {
         ProfileInfoTile(
           icon: Icons.business_outlined,
           label: 'Department',
-          value: employee!.department,
+          value: employee!.department.toUpperCase(),
           isFirst: false,
           isLast: false,
+        ),
+        ProfileInfoTile(
+          icon: Icons.groups_outlined,
+          label: 'Team',
+          value: employee!.teamName.toUpperCase(),
+          isFirst: false,
+          isLast: false,
+        ),
+        ProfileInfoTile(
+          icon: Icons.work_outline,
+          label: 'Status',
+          value: employee!.currentStatus.toUpperCase(),
+          isFirst: false,
+          isLast: true,
         ),
       ]);
     }

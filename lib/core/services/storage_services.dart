@@ -7,6 +7,7 @@ class StorageServices {
   static const _accessTokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';
   static const _userRole = 'user_role';
+  static const _isVerified = 'is_verified';
 
   // Save access token
   Future<void> saveAccessToken(String token) async {
@@ -31,6 +32,17 @@ class StorageServices {
   // Save user role
   Future<void> saveUserRole(String role) async {
     await storage.write(key: _userRole, value: role);
+  }
+
+  // Save verification status
+  Future<void> saveIsVerified(bool isVerified) async {
+    await storage.write(key: _isVerified, value: isVerified.toString());
+  }
+
+  // Get verification status
+  Future<bool?> getIsVerified() async {
+    final value = await storage.read(key: _isVerified);
+    return value == null ? null : value == 'true';
   }
 
   // Delete all tokens and user role

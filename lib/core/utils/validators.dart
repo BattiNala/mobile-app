@@ -46,9 +46,8 @@ class AppValidators {
   }
 
   static String? validatePhone(String? value) {
-    // Phone number is optional - allow null or empty
     if (value == null || value.trim().isEmpty) {
-      return null;
+      return 'Phone number is required';
     }
 
     // Check if only digits are entered

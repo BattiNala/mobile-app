@@ -32,8 +32,10 @@ class LocationService {
     }
 
     final position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: accuracy,
-      timeLimit: timeLimit,
+      locationSettings: LocationSettings(
+        accuracy: accuracy,
+        timeLimit: timeLimit,
+      ),
     );
 
     return Coordinates(latitude: position.latitude, longitude: position.longitude);

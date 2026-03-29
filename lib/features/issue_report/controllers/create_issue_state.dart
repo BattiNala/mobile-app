@@ -1,4 +1,4 @@
-import 'package:batti_nala/features/citizen_dashboard/models/issue_model.dart';
+import 'package:batti_nala/features/issue_report/models/issue_model.dart';
 
 class CreateIssueState {
   final bool isLoading;

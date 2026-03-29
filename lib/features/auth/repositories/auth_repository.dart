@@ -38,6 +38,9 @@ class AuthRepository {
         await _storage.saveAccessToken(authResponse.accessToken);
         await _storage.saveRefreshToken(authResponse.refreshToken);
         await _storage.saveUserRole(authResponse.roleName);
+        if (authResponse.isVerified != null) {
+          await _storage.saveIsVerified(authResponse.isVerified!);
+        }
         return authResponse;
       }
     } on DioException catch (e) {
@@ -69,7 +72,7 @@ class AuthRepository {
   }) async {
     try {
       final registerRequest = RegisterRequest(
-        username: username,
+        username: email,
         password: password,
         name: name,
         phoneNumber: phoneNumber,
@@ -82,24 +85,29 @@ class AuthRepository {
         data: registerRequest.toJson(),
       );
 
-      if (response.statusCode == 200) {
+      if ([200, 201].contains(response.statusCode)) {
         final authResponse = AuthResponse.fromJson(response.data);
+        // Save tokens and info to secure storage
+        await _storage.saveAccessToken(authResponse.accessToken);
+        await _storage.saveRefreshToken(authResponse.refreshToken);
         await _storage.saveUserRole(authResponse.roleName);
+        if (authResponse.isVerified != null) {
+          await _storage.saveIsVerified(authResponse.isVerified!);
+        }
         return authResponse;
       } else {
-        throw Exception(
-          'Registration failed with status code: ${response.statusCode}',
+        throw AuthError(
+          detail: '(AuthRepository) Unexpected status code: ${response.statusCode}',
         );
       }
     } on DioException catch (e) {
-      if (e.response?.statusCode == 400) {
-        final errorData = e.response?.data;
-        if (errorData != null && errorData is Map) {
-          throw AuthError.fromJson(errorData as Map<String, dynamic>);
-        }
-        throw AuthError(detail: 'User already exists');
-      }
-      throw Exception('Network error: ${e.message}');
+      final message = _extractAuthErrorDetail(
+        e.response?.data,
+        'Network error: ${e.message}',
+      );
+      throw AuthError(detail: message);
+    } catch (e) {
+      throw AuthError(detail: 'An unexpected error occurred: $e');
     }
   }
 

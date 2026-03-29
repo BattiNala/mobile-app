@@ -35,7 +35,9 @@ class _ImagePickerGridState extends State<ImagePickerGrid> {
         widget.onImageAdded(image.path);
       }
     } catch (e) {
-      SnackbarService.showError(context, 'Error picking image');
+      if (mounted) {
+        SnackbarService.showError(context, 'Error picking image');
+      }
     }
   }
 
@@ -52,7 +54,7 @@ class _ImagePickerGridState extends State<ImagePickerGrid> {
         widget.onImageAdded(image.path);
       }
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         SnackbarService.showError(context, 'Error taking photo');
       }
     }

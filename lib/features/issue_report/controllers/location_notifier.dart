@@ -1,8 +1,6 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:batti_nala/core/services/location_service.dart';
-
-// ignore: always_use_package_imports
-import 'location_state.dart';
+import 'package:batti_nala/features/issue_report/controllers/location_state.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class LocationNotifier extends StateNotifier<LocationState> {
   final LocationService _locationService;
@@ -15,6 +13,7 @@ class LocationNotifier extends StateNotifier<LocationState> {
 
     try {
       final coords = await _locationService.getCurrentCoordinates();
+      if (!mounted) return;
       final locationString = _locationService.formatCoordinateLocation(
         coords.latitude,
         coords.longitude,
@@ -27,6 +26,7 @@ class LocationNotifier extends StateNotifier<LocationState> {
         longitude: coords.longitude,
       );
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Error getting location: $e',

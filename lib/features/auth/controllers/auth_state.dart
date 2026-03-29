@@ -61,7 +61,7 @@ class AuthState {
       isConfirmPasswordObscured:
           isConfirmPasswordObscured ?? this.isConfirmPasswordObscured,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
       user: clearUser ? null : (user ?? this.user),
       verificationCode: verificationCode ?? this.verificationCode,
       isVerified: isVerified ?? this.isVerified,

@@ -1,5 +1,3 @@
-// lib/features/citizen_dashboard/models/create_issue_request.dart
-
 class CreateIssueRequest {
   final int issueTypeId;
   final String issuePriority;

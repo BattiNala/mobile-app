@@ -19,7 +19,7 @@ class CitizenDashboardView extends ConsumerWidget {
     final profileController = ref.read(profileNotifierProvider.notifier);
     final citizenProfile = profileState.citizenProfile;
 
-    if (profileState.isLoading || reports.isEmpty) {
+    if (profileState.isLoading) {
       return Scaffold(
         backgroundColor: AppColors.background,
         body: Column(
@@ -320,25 +320,61 @@ class CitizenDashboardView extends ConsumerWidget {
                     ),
 
                     const SizedBox(height: 8),
-
-                    /// Reports List
-                    ListView.separated(
-                      physics: const NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      padding: EdgeInsets.zero,
-                      itemCount: reports.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: 11),
-                      itemBuilder: (context, index) {
-                        final report = reports[index];
-                        return InkWell(
-                          onTap: () {
-                            context.push('/issue-detail/${report.issueLabel}');
-                          },
-                          child: IssueCardWidget(issue: report),
-                        );
-                      },
-                    ),
+                    if (reports.isEmpty) ...[
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 64.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.assignment_outlined,
+                                size: 80,
+                                color: Colors.grey.shade300,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No reports found',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Tap + to report an issue',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      /// Reports List
+                      ListView.separated(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        itemCount: reports.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 11),
+                        itemBuilder: (context, index) {
+                          final report = reports[index];
+                          return InkWell(
+                            onTap: () {
+                              context.push(
+                                '/issue-detail/${report.issueLabel}',
+                              );
+                            },
+                            child: IssueCardWidget(issue: report),
+                          );
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),
