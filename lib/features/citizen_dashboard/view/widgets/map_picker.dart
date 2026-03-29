@@ -90,7 +90,7 @@ class _MapPickerState extends ConsumerState<MapPicker> {
         _isLoading = false;
       });
     } catch (e) {
-      print('[MAP] Error getting location: $e');
+      debugPrint('[MAP] Error getting location: $e');
       setState(() {
         _isLoading = false;
         _updateAddressFromCoordinates(
@@ -137,7 +137,7 @@ class _MapPickerState extends ConsumerState<MapPicker> {
         });
       }
     } catch (e) {
-      print('[SEARCH] Error: $e');
+      debugPrint('[SEARCH] Error: $e');
       setState(() {
         _isSearching = false;
       });

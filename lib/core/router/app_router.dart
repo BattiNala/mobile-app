@@ -1,3 +1,4 @@
+import 'package:batti_nala/features/auth/view/verify_otp_screen.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/issue_create_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,9 +9,11 @@ import 'package:batti_nala/features/profile/view/profile_screen.dart';
 import 'package:batti_nala/features/onboarding/onboarding_screen.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/citizen_dashboard_view.dart';
 import 'package:batti_nala/features/staff_dashboard/view/dashboard_screen.dart';
-import 'package:batti_nala/features/staff_dashboard/model/staff_model.dart';
 import 'package:batti_nala/features/auth/view/password_reset_screen.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/issue_detail_view.dart';
+import 'package:batti_nala/features/staff_dashboard/view/employee_issue_detail_view.dart';
+import 'package:batti_nala/features/issue_report/models/issue_model.dart';
+import 'package:batti_nala/features/staff_dashboard/view/mission_map_view.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final user = ref.watch(authNotifierProvider.select((state) => state.user));
@@ -32,6 +35,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const PasswordResetScreen(),
       ),
       GoRoute(
+        path: '/verify-otp',
+        builder: (context, state) => const VerifyOtpScreen(),
+      ),
+      GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
       ),
@@ -41,16 +48,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/staff-dashboard',
-        builder: (context, state) => StaffDashboard(
-          staff: Staff(
-            name: 'Staff Member',
-            department: 'Management',
-            avatar: '',
-          ),
-          onViewMap: () {},
-          onViewIssue: (issue) {},
-          onNavigateToProfile: () => context.push('/profile'),
-        ),
+        builder: (context, state) => const StaffDashboard(),
       ),
       GoRoute(
         path: '/issue-create',
@@ -63,6 +61,21 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           return IssueDetailView(issueLabel: label);
         },
       ),
+      GoRoute(
+        path: '/employee-issue-detail/:label',
+        builder: (context, state) {
+          final label = state.pathParameters['label']!;
+          return EmployeeIssueDetailView(issueLabel: label);
+        },
+      ),
+      GoRoute(
+        path: '/mission-map',
+        name: 'mission-map',
+        builder: (context, state) {
+          final issue = state.extra as IssueModel;
+          return MissionMapView(issue: issue);
+        },
+      ),
     ],
     redirect: (context, state) {
       final isOnOnboarding = state.matchedLocation == '/onboarding';
@@ -70,30 +83,30 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/login' ||
           state.matchedLocation == '/signup' ||
           state.matchedLocation == '/password-reset';
-      final isProfileRoute = state.matchedLocation == '/profile';
+      final isOnVerifyScreen = state.matchedLocation == '/verify-otp';
 
-      // Logged-in user shouldn't see onboarding or auth screens
-      if (user != null && isOnOnboarding) {
-        return user.role == 'citizen' ? '/citizen-dashboard' : '/staff-dashboard';
-      }
-
-      // Allow profile route only if logged in
-      if (isProfileRoute) {
-        return user == null ? '/login' : null;
-      }
-
-      // If not logged in, allow auth routes and onboarding
+      // 1. If not logged in
       if (user == null) {
-        final shouldAllow = isAuthRoute || isOnOnboarding;
-        // Redirect to login (not onboarding) after logout
-        return shouldAllow ? null : '/login';
+        // Only allow auth routes and onboarding
+        final isAllowed = isAuthRoute || isOnOnboarding;
+        return isAllowed ? null : '/login';
       }
 
-      // If logged in but trying to access auth routes, redirect to dashboard
-      if (isAuthRoute) {
-        return user.role == 'citizen' ? '/citizen-dashboard' : '/staff-dashboard';
+      // 2. If logged in but NOT verified
+      if (!user.isVerified) {
+        // Only allow the verification screen
+        return isOnVerifyScreen ? null : '/verify-otp';
       }
 
+      // 3. If logged in AND verified
+      // Don't allow auth screens, onboarding, or verify screen
+      if (isAuthRoute || isOnOnboarding || isOnVerifyScreen) {
+        return user.role == 'citizen'
+            ? '/citizen-dashboard'
+            : '/staff-dashboard';
+      }
+
+      // Allow all other routes (dashboard, profile, etc.)
       return null;
     },
   );

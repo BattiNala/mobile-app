@@ -28,7 +28,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       final authState = ref.read(authNotifierProvider);
       try {
         await authNotifier.register(
-          username: authState.name,
+          username: authState.email ?? '',
           password: authState.password,
           name: authState.name,
           phoneNumber: authState.phone,
@@ -115,7 +115,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   validator: AppValidators.validatePhone,
                   icon: FontAwesomeIcons.phone,
                   inputType: TextInputType.phone,
-                  label: 'Phone Number',
+                  label: 'Phone Number*',
                   hint: 'Enter your phone number',
                   onChanged: (val) =>
                       ref.read(authNotifierProvider.notifier).updatePhone(val),

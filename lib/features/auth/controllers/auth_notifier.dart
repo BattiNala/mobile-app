@@ -4,6 +4,8 @@ import 'package:batti_nala/core/services/storage_services.dart';
 import 'package:batti_nala/features/auth/controllers/auth_state.dart';
 import 'package:batti_nala/features/auth/repositories/auth_repository.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
+import 'package:batti_nala/features/citizen_dashboard/controllers/citizen_dashboard_notifier.dart';
+import 'package:batti_nala/features/staff_dashboard/controller/employee_dashboard_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
@@ -34,16 +36,40 @@ class AuthNotifier extends StateNotifier<AuthState> {
         password: password,
       );
 
-      final user = User(role: authResponse.roleName);
+      final role = authResponse.roleName.toLowerCase();
+      if (role != 'citizen' && role != 'staff') {
+        await logout();
+        throw AuthError(detail: 'Login not allowed for $role role.');
+      }
 
-      await ref.read(profileNotifierProvider.notifier).fetchProfile(user.role);
+      final user = User(
+        role: authResponse.roleName,
+        isVerified: authResponse.isVerified ?? false,
+      );
 
+      if (user.isVerified) {
+        await ref
+            .read(profileNotifierProvider.notifier)
+            .fetchProfile(user.role);
+      }
+
+      if (!mounted) return;
       state = state.copyWith(user: user, isLoading: false);
     } on AuthError catch (e) {
+      if (!mounted) return;
       // Reset to null first so the listener fires even if the same error repeats
       state = state.copyWith(isLoading: false, errorMessage: null);
+      if (!mounted) return;
       state = state.copyWith(errorMessage: e.detail);
       rethrow;
+    } catch (e) {
+      if (!mounted) return;
+      state = state.copyWith(isLoading: false, errorMessage: null);
+      if (!mounted) return;
+      state = state.copyWith(
+        errorMessage:
+            'Connection failed. Please check your internet or try again later.',
+      );
     }
   }
 
@@ -68,8 +94,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
         homeAddress: homeAddress,
       );
 
-      final user = User(role: authResponse.roleName);
+      final user = User(
+        role: authResponse.roleName,
+        isVerified: authResponse.isVerified ?? false,
+      );
 
+      if (user.isVerified) {
+        await ref
+            .read(profileNotifierProvider.notifier)
+            .fetchProfile(user.role);
+      }
+
+      if (!mounted) return;
       state = state.copyWith(
         user: user,
         name: name,
@@ -77,23 +113,34 @@ class AuthNotifier extends StateNotifier<AuthState> {
         phone: phoneNumber,
         homeAddress: homeAddress,
         isLoading: false,
+        errorMessage: null,
       );
     } on AuthError catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: null);
+      if (!mounted) return;
       state = state.copyWith(errorMessage: e.detail);
+      rethrow;
+    } catch (e) {
+      if (!mounted) return;
+      state = state.copyWith(isLoading: false, errorMessage: null);
+      if (!mounted) return;
+      state = state.copyWith(errorMessage: 'An unexpected error occurred: $e');
       rethrow;
     }
   }
 
   /// LOGOUT
   Future<void> logout() async {
-    try {
-      await _authRepository.logout();
-      await _storageServices.clearAll();
-    } finally {
-      await _storageServices.clearAll();
-      state = AuthState();
-    }
+    await _authRepository.logout();
+    await _storageServices.clearAll();
+    if (!mounted) return;
+    state = AuthState();
+
+    // Invalidate providers to clear stale data
+    ref.invalidate(profileNotifierProvider);
+    ref.invalidate(dashboardProvider);
+    ref.invalidate(employeeDashboardProvider);
   }
 
   /// VERIFY USER
@@ -103,12 +150,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _authRepository.verify(code: state.verificationCode);
 
+      // Update storage and state
+      await _storageServices.saveIsVerified(true);
+      if (state.user != null) {
+        final updatedUser = User(role: state.user!.role, isVerified: true);
+        state = state.copyWith(user: updatedUser);
+
+        // Fetch profile once verified
+        await ref
+            .read(profileNotifierProvider.notifier)
+            .fetchProfile(updatedUser.role);
+      }
+
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         isVerified: true,
         verificationMessage: 'User verified successfully',
       );
     } on AuthError catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.detail);
       rethrow;
     }
@@ -121,11 +182,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await _authRepository.resendVerification();
 
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         verificationMessage: 'Verification code resent successfully',
       );
     } on AuthError catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.detail);
       rethrow;
     }
@@ -137,19 +200,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final accessToken = await _storageServices.getAccessToken();
 
       if (accessToken == null || accessToken.isEmpty) {
-        state = AuthState();
         return;
       }
 
       final role = await _storageServices.getUserRole();
+      final isVerified = await _storageServices.getIsVerified() ?? false;
 
       if (role != null) {
-        final user = User(role: role);
+        final user = User(role: role, isVerified: isVerified);
 
+        if (!mounted) return;
         state = state.copyWith(user: user);
         await ref.read(profileNotifierProvider.notifier).fetchProfile(role);
-
-        // _refreshAccessTokenIfNeeded();
       }
     } catch (_) {}
   }
@@ -173,27 +235,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// FORM HELPERS
   void updateName(String name) {
-    state = state.copyWith(name: name);
+    state = state.copyWith(name: name.trim());
   }
 
   void updateEmail(String email) {
-    state = state.copyWith(email: email);
+    state = state.copyWith(email: email.trim());
   }
 
   void updatePhone(String phone) {
-    state = state.copyWith(phone: phone);
+    state = state.copyWith(phone: phone.trim());
   }
 
   void updatePassword(String password) {
-    state = state.copyWith(password: password);
+    state = state.copyWith(password: password.trim());
   }
 
   void updateConfirmPassword(String confirmPassword) {
-    state = state.copyWith(confirmPassword: confirmPassword);
+    state = state.copyWith(confirmPassword: confirmPassword.trim());
   }
 
   void updateHomeAddress(String address) {
-    state = state.copyWith(homeAddress: address);
+    state = state.copyWith(homeAddress: address.trim());
   }
 
   void updateVerificationCode(String code) {
@@ -211,10 +273,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   void clearError() {
-    state = state.copyWith(errorMessage: null);
+    state = AuthState();
   }
 
   void resetForm() {
-    state = AuthState();
+    state = state.copyWith(
+      name: '',
+      phone: '',
+      email: '',
+      homeAddress: '',
+      password: '',
+      confirmPassword: '',
+      errorMessage: null,
+      verificationCode: '',
+    );
   }
 }

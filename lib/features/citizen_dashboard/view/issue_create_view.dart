@@ -2,9 +2,9 @@ import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/widgets/action_button.dart';
 import 'package:batti_nala/core/widgets/loading_indicator.dart';
-import 'package:batti_nala/features/citizen_dashboard/controllers/create_issue_state.dart';
-import 'package:batti_nala/features/citizen_dashboard/models/issue_type_model.dart';
-import 'package:batti_nala/features/citizen_dashboard/repository/citizen_issue_repository.dart';
+import 'package:batti_nala/features/issue_report/controllers/create_issue_state.dart';
+import 'package:batti_nala/features/issue_report/models/issue_type_model.dart';
+import 'package:batti_nala/features/issue_report/repository/issue_repository.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/widgets/image_picker_grid.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/widgets/issue_type_selector.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/widgets/location_picker.dart';
@@ -12,13 +12,12 @@ import 'package:batti_nala/features/citizen_dashboard/view/widgets/priority_sele
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:batti_nala/features/citizen_dashboard/controllers/location_notifier.dart';
-import 'package:batti_nala/features/citizen_dashboard/controllers/location_state.dart';
-// ignore: always_use_package_imports
-import '../controllers/create_issue_controller.dart';
+import 'package:batti_nala/features/issue_report/controllers/location_notifier.dart';
+import 'package:batti_nala/features/issue_report/controllers/location_state.dart';
+import 'package:batti_nala/features/issue_report/controllers/create_issue_controller.dart';
 
 final issueTypesProvider = FutureProvider<List<IssueType>>((ref) async {
-  final repository = ref.watch(citizenIssueRepositoryProvider);
+  final repository = ref.watch(issueRepositoryProvider);
   final typeModel = await repository.getIssueTypes();
   return typeModel.types;
 });

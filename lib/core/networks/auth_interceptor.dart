@@ -1,6 +1,7 @@
 import 'package:batti_nala/core/constants/api_url.dart';
 import 'package:batti_nala/core/services/storage_services.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 class AuthInterceptor extends Interceptor {
   final StorageServices _storage;
@@ -11,13 +12,20 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    // Skip auth endpoints
-    if (options.path.contains('/auth/')) {
+    // Skip adding token only for public auth endpoints
+    final publicAuthEndpoints = [
+      '/auth/login',
+      '/auth/citizen-register',
+      '/auth/password-reset',
+    ];
+
+    if (publicAuthEndpoints.any((path) => options.path.contains(path))) {
       return handler.next(options);
     }
 
     _storage.getAccessToken().then((token) {
       if (token != null) {
+        debugPrint('AccessToken: $token');
         options.headers['Authorization'] = 'Bearer $token';
       }
       handler.next(options);

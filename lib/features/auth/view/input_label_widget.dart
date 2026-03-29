@@ -43,7 +43,9 @@ class InputLabelWidget extends ConsumerWidget {
           validator: validator,
           keyboardType: inputType,
           obscureText: isPassword
-              ? (ref.watch(authNotifierProvider).isPasswordObscured)
+              ? (label.toLowerCase().contains('confirm')
+                  ? ref.watch(authNotifierProvider).isConfirmPasswordObscured
+                  : ref.watch(authNotifierProvider).isPasswordObscured)
               : false,
           onChanged: onChanged,
           textCapitalization: textCapitalization!,
@@ -63,7 +65,9 @@ class InputLabelWidget extends ConsumerWidget {
                             .togglePasswordVisibility();
                       }
                     },
-                    icon: ref.watch(authNotifierProvider).isPasswordObscured
+                    icon: (label.toLowerCase().contains('confirm')
+                            ? ref.watch(authNotifierProvider).isConfirmPasswordObscured
+                            : ref.watch(authNotifierProvider).isPasswordObscured)
                         ? const Icon(Icons.visibility_off, color: Colors.grey)
                         : const Icon(Icons.visibility, color: Colors.grey),
                   )

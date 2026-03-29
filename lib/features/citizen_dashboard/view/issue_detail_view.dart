@@ -1,6 +1,7 @@
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/widgets/loading_indicator.dart';
-import 'package:batti_nala/features/citizen_dashboard/controllers/issue_detail_notifier.dart';
+import 'package:batti_nala/features/issue_report/controllers/issue_detail_notifier.dart';
+import 'package:batti_nala/features/citizen_dashboard/view/widgets/issue_location_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -88,7 +89,7 @@ class IssueDetailView extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          issue.issueType,
+                          issue.issueType.toUpperCase(),
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 26,
@@ -160,7 +161,11 @@ class IssueDetailView extends ConsumerWidget {
                     // Location integrated snippet
                     const _SectionHeading(title: 'Where?'),
                     const SizedBox(height: 16),
-                    _buildLocationCard(issue.issueLocation),
+                    IssueLocationCard(
+                      location: issue.issueLocation,
+                      latitude: issue.latitude,
+                      longitude: issue.longitude,
+                    ),
 
                     const SizedBox(height: 40),
 
@@ -250,61 +255,6 @@ class IssueDetailView extends ConsumerWidget {
                     fontSize: 13,
                     color: AppColors.textSecondary.withValues(alpha: 0.7),
                     height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLocationCard(String location) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 120,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.map_rounded,
-                color: AppColors.primaryBlue,
-                size: 40,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.location_on_rounded,
-                  color: AppColors.adminRed,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    location,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textMain,
-                    ),
                   ),
                 ),
               ],

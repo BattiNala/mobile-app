@@ -1,9 +1,8 @@
-import 'package:batti_nala/core/models/issue_model.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class StatusBadge extends StatelessWidget {
-  final IssueStatus status;
+  final String status;
 
   const StatusBadge({super.key, required this.status});
 
@@ -13,22 +12,42 @@ class StatusBadge extends StatelessWidget {
     IconData icon;
     String text;
 
-    switch (status) {
-      case IssueStatus.pending:
+    switch (status.toUpperCase()) {
+      case 'OPEN':
+      case 'PENDING':
         color = Colors.orange;
         icon = FontAwesomeIcons.clock;
         text = 'Pending';
         break;
-      case IssueStatus.inProgress:
+      case 'ASSIGNED':
+        color = Colors.purple;
+        icon = FontAwesomeIcons.userCheck;
+        text = 'Assigned';
+        break;
+      case 'IN_PROGRESS':
         color = Colors.blue;
         icon = FontAwesomeIcons.spinner;
         text = 'In Progress';
         break;
-      case IssueStatus.resolved:
+      case 'RESOLVED':
         color = Colors.green;
         icon = FontAwesomeIcons.circleCheck;
         text = 'Resolved';
         break;
+      case 'REJECTED':
+        color = Colors.red;
+        icon = FontAwesomeIcons.circleXmark;
+        text = 'Rejected';
+        break;
+      case 'CLOSED':
+        color = Colors.grey;
+        icon = FontAwesomeIcons.circleCheck;
+        text = 'Closed';
+        break;
+      default:
+        color = Colors.grey;
+        icon = FontAwesomeIcons.circleInfo;
+        text = status;
     }
 
     return Container(

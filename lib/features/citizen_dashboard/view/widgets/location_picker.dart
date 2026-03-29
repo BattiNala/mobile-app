@@ -1,6 +1,6 @@
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/widgets/action_button.dart';
-import 'package:batti_nala/features/citizen_dashboard/controllers/location_notifier.dart';
+import 'package:batti_nala/features/issue_report/controllers/location_notifier.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/widgets/map_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -49,7 +49,7 @@ class LocationPicker extends ConsumerWidget {
               child: ActionButton(
                 label: locationState.isLoading
                     ? 'Getting location...'
-                    : 'Use My Location',
+                    : 'Current',
                 iconPath: Icons.my_location,
                 backgroundColor: Colors.blue,
                 textColor: Colors.white,
@@ -61,7 +61,7 @@ class LocationPicker extends ConsumerWidget {
                       },
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: ActionButton(
                 label: 'Pick on Map',
