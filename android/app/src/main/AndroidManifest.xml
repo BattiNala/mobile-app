@@ -23,6 +23,7 @@
         android:label="Batti Nala"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
+        android:extractNativeLibs="true"
         android:requestLegacyExternalStorage="true">
         
         <activity
@@ -65,6 +66,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+            
+        <!-- AI: Automatically download ML models on install -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="label,object" />
     </application>
     
     <!-- Required to query activities that can process text -->

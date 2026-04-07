@@ -1,3 +1,4 @@
+import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:batti_nala/core/constants/colors.dart';
@@ -29,10 +30,6 @@ class IssueStatusActionBar extends ConsumerWidget {
       nextStatus = 'RESOLVED';
       label = 'Mark Resolved';
       color = const Color(0xFF10B981);
-    } else if (statusUpper == 'RESOLVED') {
-      nextStatus = 'CLOSED';
-      label = 'Close Issue';
-      color = AppColors.primaryBlue900;
     }
 
     if (nextStatus == null) return const SizedBox.shrink();
@@ -57,11 +54,9 @@ class IssueStatusActionBar extends ConsumerWidget {
           final success = await ref
               .read(employeeIssueDetailProvider(issueLabel).notifier)
               .updateStatus(nextStatus!);
-          
+
           if (context.mounted && !success) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Failed to update status')),
-            );
+            SnackbarService.showError(context, 'Failed to update status');
           }
         },
       ),

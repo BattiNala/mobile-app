@@ -11,11 +11,16 @@ class AuthInterceptor extends Interceptor {
   final List<_PendingRequest> _pendingRequests = [];
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     // Skip adding token only for public auth endpoints
     final publicAuthEndpoints = [
       '/auth/login',
       '/auth/citizen-register',
+      '/auth/signup',
+      '/auth/register',
       '/auth/password-reset',
     ];
 
@@ -23,13 +28,12 @@ class AuthInterceptor extends Interceptor {
       return handler.next(options);
     }
 
-    _storage.getAccessToken().then((token) {
-      if (token != null) {
-        debugPrint('AccessToken: $token');
-        options.headers['Authorization'] = 'Bearer $token';
-      }
-      handler.next(options);
-    });
+    final token = await _storage.getAccessToken();
+    if (token != null) {
+      debugPrint('AccessToken: $token');
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+    return handler.next(options);
   }
 
   @override

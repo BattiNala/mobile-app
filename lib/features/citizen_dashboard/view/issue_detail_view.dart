@@ -198,7 +198,9 @@ class IssueDetailView extends ConsumerWidget {
                             ),
                             _buildMetaRow(
                               Icons.person_pin_rounded,
-                              'Handling by',
+                              issue.status.toUpperCase() == 'RESOLVED'
+                                  ? 'Resolved by'
+                                  : 'Handling by',
                               issue.assignedTo!,
                             ),
                           ],

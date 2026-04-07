@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:batti_nala/core/services/improved_image_analyzer.dart';
 import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/widgets/action_button.dart';
@@ -9,6 +11,7 @@ import 'package:batti_nala/features/citizen_dashboard/view/widgets/image_picker_
 import 'package:batti_nala/features/citizen_dashboard/view/widgets/issue_type_selector.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/widgets/location_picker.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/widgets/priority_selector.dart';
+import 'package:batti_nala/core/services/ml_kit_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -32,11 +35,179 @@ class ReportIssueScreen extends ConsumerStatefulWidget {
 class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
   final _descriptionController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _mlKitService = MLKitService();
+  bool _isAnalyzing = false;
 
   @override
   void dispose() {
     _descriptionController.dispose();
+    _mlKitService.dispose();
     super.dispose();
+  }
+
+  Future<void> _analyzeImage(String path) async {
+    setState(() => _isAnalyzing = true);
+
+    try {
+      final aiResult = await _mlKitService.processImage(path);
+      // Pass the original path for color analysis
+      final result = ImprovedImageAnalyzer.analyze(aiResult, imageFile: File(path));
+
+      if (mounted) {
+        setState(() => _isAnalyzing = false);
+
+        if (result.isValid) {
+          _showDetectionSummary(result);
+        } else {
+          String message;
+          if (result.matchedKeywords.isNotEmpty) {
+            final reason = result.matchedKeywords.first;
+            message =
+                'AI Note: We detected a $reason. Please take a clear photo of ONLY the infrastructure issue.';
+          } else {
+            message =
+                'No specific utility issue detected. Please select details manually.';
+          }
+
+          SnackbarService.showInfo(context, message);
+          debugPrint('Detection invalid: ${result.rejectionReason}');
+        }
+      }
+    } catch (e) {
+      debugPrint('AI Analysis Error: $e');
+      if (mounted) setState(() => _isAnalyzing = false);
+    }
+  }
+
+  void _showDetectionSummary(DetectionResult result) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.auto_awesome, color: Colors.amber, size: 24),
+            SizedBox(width: 12),
+            Text('AI Suggestion'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSummaryRow(
+              'Issue Type',
+              result.specificType ?? 'Unknown',
+              Icons.category_rounded,
+            ),
+            const SizedBox(height: 12),
+            _buildSummaryRow(
+              'Priority',
+              result.priority,
+              Icons.priority_high_rounded,
+              color: _getPriorityColor(result.priority),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Discard',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              _applyDetection(result);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryBlue900,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Apply AI Fill'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _applyDetection(DetectionResult result) async {
+    final controller = ref.read(createIssueControllerProvider.notifier);
+    final typesAsync = ref.read(issueTypesProvider);
+
+    if (typesAsync is AsyncData<List<IssueType>>) {
+      final matchedType = typesAsync.value.firstWhere(
+        (t) =>
+            t.issueType.toLowerCase().contains(
+              result.specificType!.toLowerCase(),
+            ) ||
+            result.specificType!.toLowerCase().contains(
+              t.issueType.toLowerCase(),
+            ),
+        orElse: () => typesAsync.value.first,
+      );
+
+      controller.updateIssueType(matchedType);
+    }
+
+    controller.updatePriority(result.priority);
+
+    // Update description if it's empty or add keywords
+    String newDesc = _descriptionController.text;
+    if (newDesc.isEmpty) {
+      newDesc =
+          'Detected ${result.specificType}: ${result.matchedKeywords.join(", ")}';
+    } else {
+      newDesc += '\n[AI detected: ${result.matchedKeywords.join(", ")}]';
+    }
+    _descriptionController.text = newDesc;
+    controller.updateDescription(newDesc);
+
+    SnackbarService.showSuccess(context, 'AI suggestions applied!');
+  }
+
+  Widget _buildSummaryRow(
+    String label,
+    String value,
+    IconData icon, {
+    Color? color,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppColors.textSecondary),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+        ),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: color ?? AppColors.textMain,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getPriorityColor(String p) {
+    switch (p) {
+      case 'URGENT':
+        return Colors.red.shade700;
+      case 'HIGH':
+        return Colors.orange.shade700;
+      case 'NORMAL':
+        return Colors.blue.shade700;
+      default:
+        return Colors.grey.shade700;
+    }
   }
 
   @override
@@ -115,7 +286,77 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Issue Type Selector
+                  // Step 1: Image Picker (AI Entry Point)
+                  _buildSectionHeader('Step 1: Capture Photo'),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primaryBlue.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ImagePickerGrid(
+                            attachments: createIssueState.attachments,
+                            onImageAdded: (path) {
+                              createIssueController.addAttachment(path);
+                              // AI Detection trigger
+                              _analyzeImage(path);
+                            },
+                            onImageRemoved: (path) {
+                              createIssueController.removeAttachment(path);
+                            },
+                          ),
+                          if (createIssueState.attachments.isEmpty) ...[
+                            const SizedBox(height: 8),
+                            const Row(
+                              children: [
+                                Icon(
+                                  Icons.auto_awesome,
+                                  size: 14,
+                                  color: AppColors.primaryBlue,
+                                ),
+                                SizedBox(width: 4),
+                                Text(
+                                  'AI will auto-fill details from your photo',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.primaryBlue,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+                  const Divider(
+                    height: 32,
+                    thickness: 1,
+                    color: AppColors.border,
+                  ),
+
+                  // Step 2: Issue Type Selector
+                  _buildSectionHeader('Step 2: Verify Details'),
+                  const SizedBox(height: 16),
                   _buildSectionHeader('Issue Type'),
                   const SizedBox(height: 12),
                   Container(
@@ -273,28 +514,8 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Image Picker
-                  _buildSectionHeader('Attachments (Photos)'),
-                  const SizedBox(height: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border, width: 1),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: ImagePickerGrid(
-                        attachments: createIssueState.attachments,
-                        onImageAdded: (path) {
-                          createIssueController.addAttachment(path);
-                        },
-                        onImageRemoved: (path) {
-                          createIssueController.removeAttachment(path);
-                        },
-                      ),
-                    ),
-                  ),
+                  // Image Picker moved to top
+                  const SizedBox(height: 8),
 
                   const SizedBox(height: 32),
 
@@ -319,8 +540,37 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
             ),
           ),
 
-          if (createIssueState.isLoading)
-            Container(color: Colors.black26, child: const SizedBox.expand()),
+          if (createIssueState.isLoading || _isAnalyzing)
+            Container(
+              color: Colors.black45,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const LoadingIndicator(),
+                    if (_isAnalyzing) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Smart Analysis Running...',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Detecting issue type & priority',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

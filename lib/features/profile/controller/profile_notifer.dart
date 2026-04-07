@@ -1,7 +1,6 @@
 import 'package:batti_nala/features/profile/controller/profile_state.dart';
 import 'package:batti_nala/features/profile/repositories/profile_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
 
 final profileNotifierProvider =
     StateNotifierProvider<ProfileNotifier, ProfileState>((ref) {
@@ -16,13 +15,10 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
   ProfileNotifier(this.ref, this._repository) : super(ProfileState());
 
   Future<void> fetchProfile(String role) async {
-    // Prevent fetches if user is already logged out
-    final user = ref.read(authNotifierProvider).user;
-    if (user == null) return;
-
-    if (role == 'citizen') {
+    final roleLower = role.toLowerCase();
+    if (roleLower == 'citizen') {
       await fetchCitizenProfile();
-    } else if (role == 'staff') {
+    } else if (roleLower == 'staff') {
       await fetchEmployeeProfile();
     }
   }
