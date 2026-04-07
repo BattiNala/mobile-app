@@ -22,7 +22,7 @@ class IssueCardWidget extends StatelessWidget {
     final typeIcon = isElectricity
         ? Icons.electric_bolt
         : isSewage
-        ? Icons.plumbing
+        ? Icons.water_drop_outlined
         : Icons.report_problem;
 
     final statusColor = _getStatusColor(issue.status);

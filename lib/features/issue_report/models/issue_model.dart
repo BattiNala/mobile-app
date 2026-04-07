@@ -29,18 +29,25 @@ class IssueModel {
 
   factory IssueModel.fromJson(Map<String, dynamic> json) {
     return IssueModel(
-      issueLabel: json['issue_label'] ?? '',
-      issueType: json['issue_type'] ?? '',
-      issuePriority: json['issue_priority'] ?? 'NORMAL',
-      description: json['description'] ?? '',
-      status: json['status'] ?? 'OPEN',
-      assignedTo: json['assigned_to'],
-      createdAt: DateTime.parse(json['created_at']),
-      attachments: List<String>.from(json['attachments'] ?? []),
-      issueLocation: json['issue_location'] ?? '',
-      latitude: (json['latitude'] ?? 0.0).toDouble(),
-      longitude: (json['longitude'] ?? 0.0).toDouble(),
-      detail: json['detail'],
+      issueLabel: json['issue_label']?.toString() ?? 'Unknown',
+      issueType: json['issue_type']?.toString() ?? 'General',
+      issuePriority: json['issue_priority']?.toString() ?? 'NORMAL',
+      description: json['description']?.toString() ?? 'No description provided',
+      status: json['status']?.toString() ?? 'OPEN',
+      assignedTo: json['assigned_to']?.toString(),
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(
+                  json['created_at'].toString().replaceFirst(' ', 'T'),
+                ) ??
+                DateTime.now()
+          : DateTime.now(),
+      attachments:
+          (json['attachments'] as List?)?.map((e) => e.toString()).toList() ??
+          [],
+      issueLocation: json['issue_location']?.toString() ?? 'Location unknown',
+      latitude: double.tryParse(json['latitude']?.toString() ?? '0') ?? 0.0,
+      longitude: double.tryParse(json['longitude']?.toString() ?? '0') ?? 0.0,
+      detail: json['detail']?.toString(),
     );
   }
 }

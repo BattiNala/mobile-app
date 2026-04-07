@@ -45,6 +45,6 @@ class EmployeeDashboardController extends StateNotifier<List<IssueModel>> {
 
 final employeeDashboardProvider =
     StateNotifierProvider<EmployeeDashboardController, List<IssueModel>>((ref) {
-  final repository = ref.read(issueRepositoryProvider);
-  return EmployeeDashboardController(ref, repository);
-});
+      final repository = ref.read(issueRepositoryProvider);
+      return EmployeeDashboardController(ref, repository);
+    });

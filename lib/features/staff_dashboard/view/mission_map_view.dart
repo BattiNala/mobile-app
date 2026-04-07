@@ -139,12 +139,30 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
 
   void _updateNavigationHints() {
     if (_route == null || _currentLatLng == null) return;
-    if (_route!.path.length < 2) {
-      _hintText = "You've arrived!";
+
+    final target = LatLng(widget.issue.latitude, widget.issue.longitude);
+    final distToTarget = const Distance().as(
+      LengthUnit.Meter,
+      _currentLatLng!,
+      target,
+    );
+
+    if (distToTarget < 20) {
+      _hintText = "You've arrived at the site!";
       return;
     }
 
-    _hintText = 'Continue toward the mission site';
+    final offRoadDist = const Distance().as(
+      LengthUnit.Meter,
+      _route!.path.last,
+      target,
+    );
+
+    if (offRoadDist > 10 && _route!.path.length <= 5) {
+      _hintText = 'Almost there! Follow the off-road path';
+    } else {
+      _hintText = 'Continue toward the mission site';
+    }
   }
 
   @override
@@ -180,10 +198,22 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
               if (_route != null)
                 PolylineLayer(
                   polylines: [
+                    // Main routed path on roads
                     Polyline(
                       points: _route!.path,
                       color: AppColors.primaryBlue,
                       strokeWidth: 7,
+                    ),
+
+                    // "Off-road" connecting line if road ends early
+                    Polyline(
+                      points: [
+                        _route!.path.last,
+                        LatLng(widget.issue.latitude, widget.issue.longitude),
+                      ],
+                      color: AppColors.primaryBlue.withValues(alpha: 0.6),
+                      strokeWidth: 4,
+                      isDotted: true,
                     ),
                   ],
                 ),

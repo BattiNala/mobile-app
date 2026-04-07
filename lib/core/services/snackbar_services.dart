@@ -28,6 +28,17 @@ class SnackbarService {
     );
   }
 
+  static void showInfo(BuildContext context, String message) {
+    _showTopSnackBar(
+      context,
+      message,
+      Colors.blueGrey,
+      Icons.info_outline,
+      null,
+      null,
+    );
+  }
+
   static void _showTopSnackBar(
     BuildContext context,
     String message,

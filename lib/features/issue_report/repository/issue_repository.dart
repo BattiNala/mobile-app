@@ -54,7 +54,9 @@ class IssueRepository {
   /// Get all issues reported by the current citizen
   Future<List<IssueModel>> getCitizenIssues() async {
     final response = await _dioClient.get('/issues/my-issues');
-    final issues = response.data['issues'] as List? ?? [];
+    // The backend might return the list under 'items' or 'issues' depending on the exact endpoint logic
+    final rawIssues = response.data['items'] ?? response.data['issues'] ?? [];
+    final issues = rawIssues as List;
     return issues.map((json) => IssueModel.fromJson(json)).toList();
   }
 
