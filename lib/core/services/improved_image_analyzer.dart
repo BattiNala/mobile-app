@@ -46,22 +46,62 @@ class ImprovedImageAnalyzer {
     print('  Labels: ${labels.length}');
     print('  Objects: ${objects.length}');
 
-    // === STEP 1: REJECTION CHECK ===
+    // === STEP 1: REJECTION CHECK (SOFT GATE) ===
     print('\n[STEP 1] Checking for non-infrastructure...');
     final rejectionResult = ImprovedKeywordMatcher.checkRejection(labels);
     if (rejectionResult.hasMatch) {
-      print('❌ REJECTED: Non-infrastructure detected');
+      print(
+        '  ⚠️ Rejection signals found, but continuing to verify infrastructure first...',
+      );
+    } else {
+      print('  ✓ No high-confidence rejection keywords found');
+    }
+
+    if (_hasHumanSignals(labels)) {
+      print('❌ REJECTED: Human/person image detected');
       return DetectionResult(
         category: Category.rejected,
         priority: 'LOW',
         confidence: 0.0,
-        matchedKeywords: rejectionResult.matchedKeywords,
+        matchedKeywords: const ['human/person'],
         detectionTier: DetectionTier.rejected,
         rejectionReason:
-            'Non-infrastructure detected: ${rejectionResult.matchedKeywords}',
+            'Human or portrait image detected. Please upload a sewage or electrical infrastructure photo only.',
       );
     }
-    print('  ✓ No high-confidence rejection keywords found');
+
+    if (_hasFireSmokeSignals(labels)) {
+      print(
+        '✅ FIRE/SMOKE DETECTED: Auto-filling electrical with HIGH priority',
+      );
+      return DetectionResult(
+        category: Category.electrical,
+        specificType: 'Electricity',
+        priority: 'HIGH',
+        confidence: 0.95,
+        matchedKeywords: const ['fire', 'smoke'],
+        detectionTier: DetectionTier.imageProperties,
+        rejectionReason: '',
+      );
+    }
+
+    final robustDecision = _buildRobustDecision(labels, objects, imageFile);
+    if (robustDecision != null) {
+      return robustDecision;
+    }
+
+    if (!_hasInfrastructureSignals(labels, objects, imageFile)) {
+      print('❌ REJECTED: No sewage/electrical infrastructure evidence');
+      return DetectionResult(
+        category: Category.rejected,
+        priority: 'LOW',
+        confidence: 0.0,
+        matchedKeywords: const [],
+        detectionTier: DetectionTier.rejected,
+        rejectionReason:
+            'No sewage or electrical infrastructure detected. Please upload only sewage or electrical issue photos.',
+      );
+    }
 
     // === STEP 2: SHAPE ANALYSIS ===
     print('\n[STEP 2] Analyzing object shapes...');
@@ -106,7 +146,7 @@ class ImprovedImageAnalyzer {
     // === TIER 3: IMAGE PROPERTIES (Tertiary) ===
     if (imageFile != null) {
       print('\n[TIER 3] Image Properties Analysis...');
-      final tier3Result = _runTier3(imageFile);
+      final tier3Result = _runTier3(imageFile, labels);
 
       if (tier3Result != null &&
           tier3Result.confidence >=
@@ -119,6 +159,19 @@ class ImprovedImageAnalyzer {
           DetectionTier.imageProperties,
         );
       }
+    }
+
+    if (rejectionResult.hasMatch) {
+      print('❌ REJECTED: Non-infrastructure detected');
+      return DetectionResult(
+        category: Category.rejected,
+        priority: 'LOW',
+        confidence: 0.0,
+        matchedKeywords: rejectionResult.matchedKeywords,
+        detectionTier: DetectionTier.rejected,
+        rejectionReason:
+            'Non-infrastructure detected: ${rejectionResult.matchedKeywords}',
+      );
     }
 
     // === FINAL: ALL TIERS FAILED ===
@@ -198,7 +251,7 @@ class ImprovedImageAnalyzer {
     return _runTier1(labels, shapeResults);
   }
 
-  static _TierResult? _runTier3(File imageFile) {
+  static _TierResult? _runTier3(File imageFile, List<ImageLabel> labels) {
     try {
       final bytes = imageFile.readAsBytesSync();
       final image = img.decodeImage(bytes);
@@ -209,6 +262,9 @@ class ImprovedImageAnalyzer {
 
       final properties = _sampleImageProperties(thumbnail);
       print('  Properties: $properties');
+      final hasElectricalSignals = _hasElectricalSignals(labels);
+      final hasSewageSignals = _hasSewageSignals(labels);
+      final hasFireSignals = _hasFireSignals(labels);
 
       String? type;
       Category? category;
@@ -217,8 +273,9 @@ class ImprovedImageAnalyzer {
 
       // Fire Detection
       if (properties['firePercentage']! >
-          DetectionConfig.firePercentageThreshold) {
-        type = 'Emergency - Fire';
+              DetectionConfig.firePercentageThreshold &&
+          (hasFireSignals || hasElectricalSignals)) {
+        type = 'Electricity';
         category = Category.electrical;
         maxConf =
             properties['firePercentage']! >
@@ -228,24 +285,36 @@ class ImprovedImageAnalyzer {
         keywords.add('🔥fire_colors_detected');
       }
 
-      // Metal/Transformer (High Contrast)
+      // Sewage/water-like surface
       if (category == null &&
-          properties['highContrastPixels']! >
-              DetectionConfig.highContrastThreshold) {
-        type = 'Metal/Transformer';
-        category = Category.electrical;
-        maxConf = 0.60;
-        keywords.add('high_contrast_metal');
+          properties['waterLikePercentage']! > 0.10 &&
+          (hasSewageSignals || properties['brownPercentage']! > 0.04)) {
+        type = 'Sewage';
+        category = Category.sewage;
+        maxConf = 0.62;
+        keywords.add('water_like_surface');
       }
 
       // Sewage/Brown
       if (category == null &&
           properties['brownPercentage']! >
-              DetectionConfig.brownPercentageThreshold) {
-        type = 'Sewage/Corrosion';
+              DetectionConfig.brownPercentageThreshold &&
+          hasSewageSignals) {
+        type = 'Sewage';
         category = Category.sewage;
-        maxConf = 0.58;
+        maxConf = 0.60;
         keywords.add('brown_sewage_corrosion');
+      }
+
+      // Electrical contrast (fallback only)
+      if (category == null &&
+          properties['highContrastPixels']! >
+              DetectionConfig.highContrastThreshold &&
+          hasElectricalSignals) {
+        type = 'Electricity';
+        category = Category.electrical;
+        maxConf = 0.50;
+        keywords.add('high_contrast_structure');
       }
 
       if (category != null) {
@@ -260,6 +329,447 @@ class ImprovedImageAnalyzer {
       print('  ❌ Tier 3 Error: $e');
     }
     return null;
+  }
+
+  static bool _hasElectricalSignals(List<ImageLabel> labels) {
+    const electricalTokens = [
+      'electric',
+      'electricity',
+      'power',
+      'wire',
+      'cable',
+      'pole',
+      'transformer',
+      'lamp',
+      'light',
+      'utility',
+    ];
+
+    return labels.any((label) {
+      final text = label.label.toLowerCase();
+      return electricalTokens.any(text.contains) && label.confidence >= 0.45;
+    });
+  }
+
+  static bool _hasSewageSignals(List<ImageLabel> labels) {
+    const sewageTokens = [
+      'sewage',
+      'sewer',
+      'drain',
+      'drainage',
+      'manhole',
+      'overflow',
+      'flood',
+      'water',
+      'pipe',
+      'waste',
+    ];
+
+    return labels.any((label) {
+      final text = label.label.toLowerCase();
+      return sewageTokens.any(text.contains) && label.confidence >= 0.40;
+    });
+  }
+
+  static bool _hasSewageDirectSignals(List<ImageLabel> labels) {
+    const sewageDirectTokens = [
+      'sewage',
+      'sewer',
+      'drain',
+      'drainage',
+      'manhole',
+      'overflow',
+      'overflowing',
+      'flood',
+      'waterlogging',
+      'water',
+      'leak',
+      'pipe',
+      'waste',
+      'puddle',
+      'wet',
+    ];
+
+    return labels.any((label) {
+      final text = label.label.toLowerCase();
+      return sewageDirectTokens.any(text.contains) && label.confidence >= 0.35;
+    });
+  }
+
+  static bool _hasFireSignals(List<ImageLabel> labels) {
+    const fireTokens = ['fire', 'flame', 'smoke', 'burn', 'spark'];
+
+    return labels.any((label) {
+      final text = label.label.toLowerCase();
+      return fireTokens.any(text.contains) && label.confidence >= 0.40;
+    });
+  }
+
+  static bool _hasHumanSignals(List<ImageLabel> labels) {
+    const humanCoreTokens = [
+      'person',
+      'people',
+      'human',
+      'face',
+      'selfie',
+      'portrait',
+      'man',
+      'woman',
+      'child',
+    ];
+
+    const humanAccessoryTokens = [
+      'smile',
+      'beard',
+      'moustache',
+      'mustache',
+      'eyelash',
+      'eyebrow',
+      'lip',
+      'nose',
+      'cheek',
+      'jaw',
+      'flesh',
+      'shirt',
+      'jacket',
+    ];
+
+    int coreSignals = 0;
+    int accessorySignals = 0;
+    for (final label in labels) {
+      final text = label.label.toLowerCase();
+      if (humanCoreTokens.any(text.contains) && label.confidence >= 0.35) {
+        coreSignals++;
+      }
+      if (humanAccessoryTokens.any(text.contains) && label.confidence >= 0.40) {
+        accessorySignals++;
+      }
+    }
+
+    return coreSignals >= 1 || accessorySignals >= 3;
+  }
+
+  static bool _hasFireSmokeSignals(List<ImageLabel> labels) {
+    const fireSmokeTokens = [
+      'fire',
+      'smoke',
+      'flame',
+      'burn',
+      'burning',
+      'spark',
+    ];
+
+    int fireSmokeSignals = 0;
+    for (final label in labels) {
+      final text = label.label.toLowerCase();
+      if (fireSmokeTokens.any(text.contains) && label.confidence >= 0.40) {
+        fireSmokeSignals++;
+      }
+    }
+
+    return fireSmokeSignals >= 1;
+  }
+
+  static DetectionResult? _buildRobustDecision(
+    List<ImageLabel> labels,
+    List<DetectedObject> objects,
+    File? imageFile,
+  ) {
+    final hasSewageDirectSignals = _hasSewageDirectSignals(labels);
+    final hasElectricalDirectSignals = _hasElectricalSignals(labels);
+
+    final electricalSignals = <String>[];
+    final sewageSignals = <String>[];
+
+    double electricalScore = 0.0;
+    double sewageScore = 0.0;
+
+    for (final label in labels) {
+      final text = label.label.toLowerCase();
+      if (_matchesAny(text, _electricalTokens())) {
+        electricalSignals.add(label.label);
+        electricalScore += 0.55 * label.confidence;
+      }
+      if (_matchesAny(text, _sewageTokens())) {
+        sewageSignals.add(label.label);
+        sewageScore += 0.55 * label.confidence;
+      }
+    }
+
+    for (final object in objects) {
+      final shape = ImprovedShapeAnalyzer.analyzeObject(object).primaryShape;
+      if (shape == ShapeType.tall ||
+          shape == ShapeType.boxLike ||
+          shape == ShapeType.linear) {
+        electricalScore += 0.28;
+      }
+      if (shape == ShapeType.circular || shape == ShapeType.irregular) {
+        sewageScore += 0.22;
+      }
+    }
+
+    if (imageFile != null) {
+      try {
+        final bytes = imageFile.readAsBytesSync();
+        final image = img.decodeImage(bytes);
+        if (image != null) {
+          final thumbnail = img.copyResize(image, width: 120, height: 120);
+          final properties = _sampleImageProperties(thumbnail);
+          final firePct = properties['firePercentage']!;
+          final brownPct = properties['brownPercentage']!;
+          final waterPct = properties['waterLikePercentage']!;
+          final contrastPct = properties['highContrastPixels']!;
+
+          electricalScore += (contrastPct * 0.25);
+          sewageScore += (brownPct * 0.45) + (waterPct * 0.35);
+
+          if (firePct > 0.08) {
+            electricalScore += 0.45;
+          }
+
+          if (brownPct > 0.03 || waterPct > 0.05) {
+            sewageScore += 0.15;
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (hasSewageDirectSignals) {
+      final sewageVisualHint =
+          imageFile != null && _hasSewageVisualSignals(imageFile);
+      if (sewageVisualHint || sewageScore >= 0.35) {
+        final overflowOrLeak = sewageSignals.any((signal) {
+          final lower = signal.toLowerCase();
+          return lower.contains('overflow') ||
+              lower.contains('leak') ||
+              lower.contains('flood') ||
+              lower.contains('drain');
+        });
+
+        return DetectionResult(
+          category: Category.sewage,
+          specificType: 'Sewage',
+          priority: overflowOrLeak ? 'HIGH' : 'NORMAL',
+          confidence: (0.72 + sewageScore).clamp(0.0, 1.0),
+          matchedKeywords: sewageSignals.isEmpty
+              ? const ['sewage']
+              : sewageSignals,
+          detectionTier: DetectionTier.imageProperties,
+          rejectionReason: '',
+        );
+      }
+    }
+
+    if (hasElectricalDirectSignals && electricalScore >= 0.45) {
+      final highPriority = electricalSignals.any((signal) {
+        final lower = signal.toLowerCase();
+        return lower.contains('fire') ||
+            lower.contains('smoke') ||
+            lower.contains('spark') ||
+            lower.contains('burn');
+      });
+
+      return DetectionResult(
+        category: Category.electrical,
+        specificType: 'Electricity',
+        priority: highPriority
+            ? 'HIGH'
+            : _priorityFromSignals(
+                Category.electrical,
+                electricalSignals,
+                electricalScore,
+              ),
+        confidence: electricalScore.clamp(0.0, 1.0),
+        matchedKeywords: electricalSignals.isEmpty
+            ? const ['electricity']
+            : electricalSignals,
+        detectionTier: DetectionTier.imageProperties,
+        rejectionReason: '',
+      );
+    }
+
+    if (imageFile != null) {
+      try {
+        final bytes = imageFile.readAsBytesSync();
+        final image = img.decodeImage(bytes);
+        if (image != null) {
+          final thumbnail = img.copyResize(image, width: 120, height: 120);
+          final properties = _sampleImageProperties(thumbnail);
+          final waterPct = properties['waterLikePercentage']!;
+          final brownPct = properties['brownPercentage']!;
+          final contrastPct = properties['highContrastPixels']!;
+
+          final strongSewageVisual =
+              (waterPct >= 0.20 && brownPct >= 0.015) ||
+              (waterPct >= 0.28) ||
+              (brownPct >= 0.04 && contrastPct >= 0.18);
+
+          if (strongSewageVisual) {
+            return DetectionResult(
+              category: Category.sewage,
+              specificType: 'Sewage',
+              priority: waterPct >= 0.26 || contrastPct >= 0.22
+                  ? 'HIGH'
+                  : 'NORMAL',
+              confidence: (0.68 + waterPct + brownPct).clamp(0.0, 1.0),
+              matchedKeywords: sewageSignals.isNotEmpty
+                  ? sewageSignals
+                  : const ['overflow', 'drain', 'water'],
+              detectionTier: DetectionTier.imageProperties,
+              rejectionReason: '',
+            );
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (electricalScore < 0.55 && sewageScore < 0.55) {
+      return null;
+    }
+
+    final category = electricalScore >= sewageScore
+        ? Category.electrical
+        : Category.sewage;
+    final score = category == Category.electrical
+        ? electricalScore
+        : sewageScore;
+    final matched = category == Category.electrical
+        ? electricalSignals
+        : sewageSignals;
+
+    return DetectionResult(
+      category: category,
+      specificType: category == Category.electrical ? 'Electricity' : 'Sewage',
+      priority: _priorityFromSignals(category, matched, score),
+      confidence: score.clamp(0.0, 1.0),
+      matchedKeywords: matched.isEmpty
+          ? [category == Category.electrical ? 'electricity' : 'sewage']
+          : matched,
+      detectionTier: DetectionTier.imageProperties,
+      rejectionReason: '',
+    );
+  }
+
+  static String _priorityFromSignals(
+    Category category,
+    List<String> matched,
+    double score,
+  ) {
+    final joined = matched.join(' ').toLowerCase();
+
+    if (category == Category.electrical &&
+        (joined.contains('fire') ||
+            joined.contains('smoke') ||
+            joined.contains('spark') ||
+            score >= 0.9)) {
+      return 'HIGH';
+    }
+
+    if (category == Category.sewage &&
+        (joined.contains('overflow') ||
+            joined.contains('leak') ||
+            joined.contains('flood') ||
+            score >= 0.85)) {
+      return 'HIGH';
+    }
+
+    return score >= 0.75 ? 'NORMAL' : 'LOW';
+  }
+
+  static List<String> _electricalTokens() => const [
+    'electric',
+    'electricity',
+    'power',
+    'wire',
+    'cable',
+    'pole',
+    'transformer',
+    'lamp',
+    'light',
+    'utility',
+  ];
+
+  static List<String> _sewageTokens() => const [
+    'sewage',
+    'sewer',
+    'drain',
+    'drainage',
+    'manhole',
+    'overflow',
+    'flood',
+    'water',
+    'pipe',
+    'waste',
+    'leak',
+  ];
+
+  static bool _matchesAny(String text, List<String> tokens) {
+    return tokens.any((token) => text.contains(token));
+  }
+
+  static bool _hasInfrastructureSignals(
+    List<ImageLabel> labels,
+    List<DetectedObject> objects,
+    File? imageFile,
+  ) {
+    if (_hasElectricalSignals(labels) || _hasSewageSignals(labels)) {
+      return true;
+    }
+
+    if (objects.isNotEmpty && _hasElectricalVisualSignals(imageFile, objects)) {
+      return true;
+    }
+
+    if (imageFile != null && _hasSewageVisualSignals(imageFile)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  static bool _hasSewageVisualSignals(File imageFile) {
+    try {
+      final bytes = imageFile.readAsBytesSync();
+      final image = img.decodeImage(bytes);
+      if (image == null) return false;
+
+      final thumbnail = img.copyResize(image, width: 120, height: 120);
+      final properties = _sampleImageProperties(thumbnail);
+
+      return properties['brownPercentage']! > 0.03 ||
+          properties['waterLikePercentage']! > 0.06 ||
+          properties['highContrastPixels']! > 0.18;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static bool _hasElectricalVisualSignals(
+    File? imageFile,
+    List<DetectedObject> objects,
+  ) {
+    if (imageFile == null || objects.isEmpty) return false;
+
+    try {
+      final bytes = imageFile.readAsBytesSync();
+      final image = img.decodeImage(bytes);
+      if (image == null) return false;
+
+      final thumbnail = img.copyResize(image, width: 120, height: 120);
+      final properties = _sampleImageProperties(thumbnail);
+      final hasCompatibleShape = objects.any((object) {
+        final shape = ImprovedShapeAnalyzer.analyzeObject(object).primaryShape;
+        return shape == ShapeType.tall ||
+            shape == ShapeType.boxLike ||
+            shape == ShapeType.linear;
+      });
+
+      return hasCompatibleShape &&
+          (properties['highContrastPixels']! > 0.16 ||
+              properties['firePercentage']! > 0.04);
+    } catch (_) {
+      return false;
+    }
   }
 
   static _ScoreResult _calculateBoostedScore(
@@ -308,6 +818,7 @@ class ImprovedImageAnalyzer {
     int firePixels = 0;
     int highContrastPixels = 0;
     int brownPixels = 0;
+    int waterLikePixels = 0;
     int totalPixels = 0;
 
     for (var y = 0; y < image.height; y++) {
@@ -335,6 +846,13 @@ class ImprovedImageAnalyzer {
         if (r > 120 && g > 80 && g < 150 && b < 100 && r > g) {
           brownPixels++;
         }
+
+        // Water-like reflection/flow surfaces (bluish or gray reflective regions)
+        final channelSpread = (r - b).abs();
+        if ((b > g && b > r && b > 70) ||
+            (brightness > 90 && brightness < 200 && channelSpread < 20)) {
+          waterLikePixels++;
+        }
       }
     }
 
@@ -342,6 +860,7 @@ class ImprovedImageAnalyzer {
       'firePercentage': firePixels / totalPixels,
       'highContrastPixels': highContrastPixels / totalPixels,
       'brownPercentage': brownPixels / totalPixels,
+      'waterLikePercentage': waterLikePixels / totalPixels,
     };
   }
 
@@ -352,16 +871,69 @@ class ImprovedImageAnalyzer {
     DetectionTier tier,
   ) {
     // Priority Assessment
-    final priority = ImprovedKeywordMatcher.assessPriority(labels);
+    final rawPriority = ImprovedKeywordMatcher.assessPriority(labels);
+    final priority = _normalizePriority(rawPriority, tierResult.category, tier);
+    final scopedType = _normalizeTypeForScope(tierResult);
 
     return DetectionResult(
       category: tierResult.category,
-      specificType: tierResult.type,
+      specificType: scopedType,
       priority: priority,
       confidence: tierResult.confidence,
       matchedKeywords: tierResult.keywords,
       detectionTier: tier,
     );
+  }
+
+  static String _normalizeTypeForScope(_TierResult tierResult) {
+    final raw = tierResult.type?.trim();
+    if (raw == null || raw.isEmpty) {
+      return tierResult.category == Category.electrical
+          ? 'Electricity'
+          : 'Sewage';
+    }
+
+    final lower = raw.toLowerCase();
+    if (tierResult.category == Category.electrical) {
+      if (lower.contains('electric') ||
+          lower.contains('wire') ||
+          lower.contains('pole') ||
+          lower.contains('transformer') ||
+          lower.contains('light')) {
+        return raw;
+      }
+      return 'Electricity';
+    }
+
+    if (lower.contains('sew') ||
+        lower.contains('drain') ||
+        lower.contains('manhole') ||
+        lower.contains('overflow') ||
+        lower.contains('pipe')) {
+      return raw;
+    }
+    return 'Sewage';
+  }
+
+  static String _normalizePriority(
+    String rawPriority,
+    Category category,
+    DetectionTier tier,
+  ) {
+    if (rawPriority == 'HIGH' || rawPriority == 'NORMAL') {
+      return rawPriority;
+    }
+
+    // Tier-3 classifications are heuristic; avoid under-prioritizing obvious utility reports.
+    if (tier == DetectionTier.imageProperties) {
+      return 'NORMAL';
+    }
+
+    if (category == Category.sewage) {
+      return 'NORMAL';
+    }
+
+    return 'LOW';
   }
 }
 

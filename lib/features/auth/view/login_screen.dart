@@ -20,15 +20,28 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   // Handle login logic
   Future<void> _handleLogin() async {
     final authNotifier = ref.read(authNotifierProvider.notifier);
     if (_formKey.currentState?.validate() ?? false) {
-      final authState = ref.read(authNotifierProvider);
+      final username = _usernameController.text.trim();
+      final password = _passwordController.text;
+
+      authNotifier.updateEmail(username);
+      authNotifier.updatePassword(password);
 
       try {
-        await authNotifier.login(authState.email ?? '', authState.password);
+        await authNotifier.login(username, password);
       } catch (_) {
         // Error is shown via snackbar through the state listener
       }
@@ -92,6 +105,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 // Email/Phone34 Field
                 InputLabelWidget(
+                  controller: _usernameController,
                   validator: AppValidators.validateUsername,
                   icon: FontAwesomeIcons.envelope,
                   inputType: TextInputType.emailAddress,
@@ -105,6 +119,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 // Password Field
                 InputLabelWidget(
+                  controller: _passwordController,
                   validator: AppValidators.validatePassword,
                   icon: FontAwesomeIcons.lock,
                   inputType: TextInputType.visiblePassword,

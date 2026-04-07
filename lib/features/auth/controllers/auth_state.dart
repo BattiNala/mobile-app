@@ -49,6 +49,7 @@ class AuthState {
     bool? isVerified,
     String? verificationMessage,
     bool clearUser = false,
+    bool clearErrorMessage = false,
   }) {
     return AuthState(
       name: name ?? this.name,
@@ -61,7 +62,7 @@ class AuthState {
       isConfirmPasswordObscured:
           isConfirmPasswordObscured ?? this.isConfirmPasswordObscured,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
       user: clearUser ? null : (user ?? this.user),
       verificationCode: verificationCode ?? this.verificationCode,
       isVerified: isVerified ?? this.isVerified,

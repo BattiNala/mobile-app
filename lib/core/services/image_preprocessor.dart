@@ -17,6 +17,10 @@ class ImagePreprocessor {
         'AI Debug: Pre-processing image (original: ${image.width}x${image.height})',
       );
 
+      final avgBrightness = _calculateAverageBrightness(image);
+      final isDarkScene = avgBrightness < 110;
+      final isBrightScene = avgBrightness > 170;
+
       // 1. Downscale for faster ML processing (max 1200px)
       // ML Kit doesn't need high res, and downscaling reduces sensor noise
       if (image.width > 1200 || image.height > 1200) {
@@ -29,21 +33,23 @@ class ImagePreprocessor {
         print('AI Debug: Downscaled to ${image.width}x${image.height}');
       }
 
-      // 2. Adaptive Contrast / Brightness
-      // Infrastructure like wires often gets lost in bright sky or dark shadows
-      // We apply moderate contrast to make edges pop
-      final enhanced = img.adjustColor(
+      // 2. Adaptive contrast/brightness for scene type
+      // - dark scenes: lift shadows and add a bit more contrast
+      // - bright scenes: slightly reduce exposure to preserve edges
+      // - normal scenes: apply mild enhancement
+      final adjusted = img.adjustColor(
         image,
-        contrast: 1.25,
-        brightness: 1.05,
-        exposure: 1.1,
+        contrast: isDarkScene ? 1.35 : (isBrightScene ? 1.12 : 1.22),
+        brightness: isDarkScene ? 1.12 : (isBrightScene ? 0.98 : 1.04),
+        exposure: isDarkScene ? 1.18 : (isBrightScene ? 0.96 : 1.05),
+        saturation: 1.05,
       );
 
-      // 3. Optimized Sharpening for edge detection of wires/poles
-      // This helps ML Kit distinguish thin elements against the background
+      // 3. Gentle denoise + unsharp mask to keep drainage water and pole edges visible
+      final blurred = img.gaussianBlur(adjusted, radius: 1);
       final sharpened = img.convolution(
-        enhanced,
-        filter: [-0.5, -1.0, -0.5, -1.0, 7.0, -1.0, -0.5, -1.0, -0.5],
+        blurred,
+        filter: [0, -1, 0, -1, 5, -1, 0, -1, 0],
       );
 
       // Save to a temporary location
@@ -51,7 +57,7 @@ class ImagePreprocessor {
       final fileName = 'enhanced_${p.basename(filePath)}';
       final enhancedPath = p.join(tempDir.path, fileName);
 
-      final encoded = img.encodeJpg(sharpened, quality: 85);
+      final encoded = img.encodeJpg(sharpened, quality: 90);
       await File(enhancedPath).writeAsBytes(encoded);
 
       print('AI Debug: Enhanced image saved at $enhancedPath');
@@ -60,5 +66,22 @@ class ImagePreprocessor {
       print('AI Debug: Pre-processing failed, using original: $e');
       return filePath;
     }
+  }
+
+  static double _calculateAverageBrightness(img.Image image) {
+    var total = 0.0;
+    var samples = 0;
+    final stepX = (image.width / 40).ceil().clamp(1, image.width);
+    final stepY = (image.height / 40).ceil().clamp(1, image.height);
+
+    for (var y = 0; y < image.height; y += stepY) {
+      for (var x = 0; x < image.width; x += stepX) {
+        final pixel = image.getPixel(x, y);
+        total += (pixel.r + pixel.g + pixel.b) / 3;
+        samples++;
+      }
+    }
+
+    return samples == 0 ? 0.0 : total / samples;
   }
 }
