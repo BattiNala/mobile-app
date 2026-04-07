@@ -37,6 +37,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
   final _formKey = GlobalKey<FormState>();
   final _mlKitService = MLKitService();
   bool _isAnalyzing = false;
+  int _analysisInFlight = 0;
 
   @override
   void dispose() {
@@ -46,36 +47,58 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
   }
 
   Future<void> _analyzeImage(String path) async {
-    setState(() => _isAnalyzing = true);
+    _analysisInFlight++;
+    if (mounted) {
+      setState(() => _isAnalyzing = true);
+    }
 
     try {
       final aiResult = await _mlKitService.processImage(path);
       // Pass the original path for color analysis
-      final result = ImprovedImageAnalyzer.analyze(aiResult, imageFile: File(path));
+      final result = ImprovedImageAnalyzer.analyze(
+        aiResult,
+        imageFile: File(path),
+      );
 
       if (mounted) {
-        setState(() => _isAnalyzing = false);
+        _analysisInFlight = (_analysisInFlight - 1).clamp(0, 999999);
+        setState(() => _isAnalyzing = _analysisInFlight > 0);
 
         if (result.isValid) {
           _showDetectionSummary(result);
         } else {
-          String message;
-          if (result.matchedKeywords.isNotEmpty) {
-            final reason = result.matchedKeywords.first;
-            message =
-                'AI Note: We detected a $reason. Please take a clear photo of ONLY the infrastructure issue.';
-          } else {
-            message =
-                'No specific utility issue detected. Please select details manually.';
-          }
+          final englishMessage = result.rejectionReason.isNotEmpty
+              ? result.rejectionReason
+              : 'Could not detect sewage or electrical infrastructure.';
+          final nepaliMessage = result.rejectionReason.isNotEmpty
+              ? 'कृपया ढल वा विद्युत् सम्बन्धी फोटो मात्र अपलोड गर्नुहोस्।'
+              : 'ढल वा विद्युत् सम्बन्धी संरचना भेटिएन। कृपया स्पष्ट फोटो अपलोड गर्नुहोस्।';
 
-          SnackbarService.showInfo(context, message);
+          SnackbarService.showErrorDialog(
+            context,
+            title: 'Invalid Image',
+            englishMessage: englishMessage,
+            nepaliMessage: nepaliMessage,
+            buttonText: 'OK',
+          );
           debugPrint('Detection invalid: ${result.rejectionReason}');
         }
       }
     } catch (e) {
       debugPrint('AI Analysis Error: $e');
-      if (mounted) setState(() => _isAnalyzing = false);
+      if (mounted) {
+        _analysisInFlight = (_analysisInFlight - 1).clamp(0, 999999);
+        setState(() => _isAnalyzing = _analysisInFlight > 0);
+        SnackbarService.showErrorDialog(
+          context,
+          title: 'Scan Failed',
+          englishMessage:
+              'Image scan failed. You can still select issue type and priority manually.',
+          nepaliMessage:
+              'तस्बिर जाँच सफल भएन। कृपया issue type र priority आफैं छान्नुहोस्।',
+          buttonText: 'Understood',
+        );
+      }
     }
   }
 
@@ -141,27 +164,29 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     final typesAsync = ref.read(issueTypesProvider);
 
     if (typesAsync is AsyncData<List<IssueType>>) {
-      final matchedType = typesAsync.value.firstWhere(
-        (t) =>
-            t.issueType.toLowerCase().contains(
-              result.specificType!.toLowerCase(),
-            ) ||
-            result.specificType!.toLowerCase().contains(
-              t.issueType.toLowerCase(),
-            ),
-        orElse: () => typesAsync.value.first,
-      );
-
-      controller.updateIssueType(matchedType);
+      final matchedType = _findBestIssueTypeMatch(typesAsync.value, result);
+      if (matchedType != null) {
+        controller.updateIssueType(matchedType);
+      }
     }
 
-    controller.updatePriority(result.priority);
+    const validPriorities = {'LOW', 'NORMAL', 'HIGH'};
+    final resolvedPriority = validPriorities.contains(result.priority)
+        ? result.priority
+        : 'NORMAL';
+    controller.updatePriority(resolvedPriority);
 
     // Update description if it's empty or add keywords
     String newDesc = _descriptionController.text;
+    final detectedTypeLabel =
+        result.specificType ??
+        (result.category == Category.electrical
+            ? 'Electrical issue'
+            : 'Sewage issue');
+
     if (newDesc.isEmpty) {
       newDesc =
-          'Detected ${result.specificType}: ${result.matchedKeywords.join(", ")}';
+          'Detected $detectedTypeLabel: ${result.matchedKeywords.join(", ")}';
     } else {
       newDesc += '\n[AI detected: ${result.matchedKeywords.join(", ")}]';
     }
@@ -169,6 +194,65 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     controller.updateDescription(newDesc);
 
     SnackbarService.showSuccess(context, 'AI suggestions applied!');
+  }
+
+  IssueType? _findBestIssueTypeMatch(
+    List<IssueType> types,
+    DetectionResult result,
+  ) {
+    if (types.isEmpty) return null;
+
+    final specific = result.specificType?.toLowerCase().trim() ?? '';
+
+    final directMatch = types.where((t) {
+      final type = t.issueType.toLowerCase().trim();
+      if (specific.isEmpty) return false;
+      return type.contains(specific) || specific.contains(type);
+    }).toList();
+    if (directMatch.isNotEmpty) return directMatch.first;
+
+    for (final keyword in result.matchedKeywords) {
+      final normalizedKeyword = keyword.toLowerCase().trim();
+      final keywordMatch = types.where((t) {
+        final type = t.issueType.toLowerCase().trim();
+        return type.contains(normalizedKeyword) ||
+            normalizedKeyword.contains(type);
+      }).toList();
+
+      if (keywordMatch.isNotEmpty) {
+        return keywordMatch.first;
+      }
+    }
+
+    final categoryKeywords = result.category == Category.electrical
+        ? [
+            'electric',
+            'electricity',
+            'power',
+            'wire',
+            'pole',
+            'transformer',
+            'light',
+          ]
+        : [
+            'sewage',
+            'sewer',
+            'drain',
+            'drainage',
+            'manhole',
+            'pipeline',
+            'wastewater',
+            'water',
+          ];
+
+    for (final t in types) {
+      final normalized = t.issueType.toLowerCase();
+      if (categoryKeywords.any(normalized.contains)) {
+        return t;
+      }
+    }
+
+    return types.first;
   }
 
   Widget _buildSummaryRow(

@@ -12,6 +12,7 @@ class InputLabelWidget extends ConsumerWidget {
   final bool isPassword;
   final String? Function(String?)? validator;
   final void Function(String) onChanged;
+  final TextEditingController? controller;
 
   const InputLabelWidget({
     super.key,
@@ -23,6 +24,7 @@ class InputLabelWidget extends ConsumerWidget {
     this.validator,
     this.textCapitalization = TextCapitalization.none,
     this.isPassword = false,
+    this.controller,
   });
 
   @override
@@ -40,6 +42,7 @@ class InputLabelWidget extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         TextFormField(
+          controller: controller,
           validator: validator,
           keyboardType: inputType,
           obscureText: isPassword

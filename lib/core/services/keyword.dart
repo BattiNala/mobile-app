@@ -46,11 +46,11 @@ class ImprovedKeywordMatcher {
           bool matched = false;
 
           if (exactMatch) {
-            // Exact match required
-            matched = text == keyword;
+            // Match whole words/phrases only to avoid collisions like post -> poster.
+            matched = _matchesWholeWord(text, keyword);
           } else {
             // Partial match OK
-            matched = text.contains(keyword);
+            matched = _matchesPartialWord(text, keyword);
           }
 
           if (matched) {
@@ -133,6 +133,18 @@ class ImprovedKeywordMatcher {
       totalMatches: keywords.length,
       avgPriority: avgPriority,
     );
+  }
+
+  static bool _matchesWholeWord(String text, String keyword) {
+    final escaped = RegExp.escape(keyword);
+    final pattern = RegExp(r'(^|[^a-z0-9])' + escaped + r'([^a-z0-9]|$)');
+    return pattern.hasMatch(text);
+  }
+
+  static bool _matchesPartialWord(String text, String keyword) {
+    final escaped = RegExp.escape(keyword);
+    final pattern = RegExp(r'(^|[^a-z0-9])' + escaped + r'([^a-z0-9]|$)');
+    return pattern.hasMatch(text);
   }
 
   /// Calculate weighted match score

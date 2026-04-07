@@ -1,6 +1,91 @@
 import 'package:flutter/material.dart';
+import 'package:batti_nala/core/constants/colors.dart';
 
 class SnackbarService {
+  static Future<void> showErrorDialog(
+    BuildContext context, {
+    required String title,
+    required String englishMessage,
+    required String nepaliMessage,
+    String buttonText = 'OK',
+  }) async {
+    if (!context.mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: AppColors.white,
+          titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          title: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AppColors.adminRedLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.error_outline,
+                  color: AppColors.adminRed,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.textMain,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                englishMessage,
+                style: const TextStyle(
+                  color: AppColors.textMain,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                nepaliMessage,
+                style: const TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryBlue900,
+              ),
+              child: Text(buttonText),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   static void showError(
     BuildContext context,
     String message, [

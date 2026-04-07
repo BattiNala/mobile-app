@@ -28,7 +28,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// LOGIN
   Future<void> login(String username, String password) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, clearErrorMessage: true);
 
     try {
       final authResponse = await _authRepository.login(
@@ -58,13 +58,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } on AuthError catch (e) {
       if (!mounted) return;
       // Reset to null first so the listener fires even if the same error repeats
-      state = state.copyWith(isLoading: false, errorMessage: null);
+      state = state.copyWith(isLoading: false, clearErrorMessage: true);
       if (!mounted) return;
       state = state.copyWith(errorMessage: e.detail);
       rethrow;
     } catch (e) {
       if (!mounted) return;
-      state = state.copyWith(isLoading: false, errorMessage: null);
+      state = state.copyWith(isLoading: false, clearErrorMessage: true);
       if (!mounted) return;
       state = state.copyWith(
         errorMessage:
@@ -82,7 +82,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String email,
     required String homeAddress,
   }) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, clearErrorMessage: true);
 
     try {
       final authResponse = await _authRepository.register(
@@ -117,13 +117,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
     } on AuthError catch (e) {
       if (!mounted) return;
-      state = state.copyWith(isLoading: false, errorMessage: null);
+      state = state.copyWith(isLoading: false, clearErrorMessage: true);
       if (!mounted) return;
       state = state.copyWith(errorMessage: e.detail);
       rethrow;
     } catch (e) {
       if (!mounted) return;
-      state = state.copyWith(isLoading: false, errorMessage: null);
+      state = state.copyWith(isLoading: false, clearErrorMessage: true);
       if (!mounted) return;
       state = state.copyWith(errorMessage: 'An unexpected error occurred: $e');
       rethrow;
@@ -145,7 +145,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// VERIFY USER
   Future<void> verify() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, clearErrorMessage: true);
 
     try {
       await _authRepository.verify(code: state.verificationCode);
@@ -177,7 +177,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// RESEND VERIFICATION
   Future<void> resendVerification() async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
+    state = state.copyWith(isLoading: true, clearErrorMessage: true);
 
     try {
       await _authRepository.resendVerification();
@@ -273,7 +273,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   void clearError() {
-    state = AuthState();
+    state = state.copyWith(clearErrorMessage: true);
   }
 
   void resetForm() {
@@ -284,7 +284,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       homeAddress: '',
       password: '',
       confirmPassword: '',
-      errorMessage: null,
+      clearErrorMessage: true,
       verificationCode: '',
     );
   }
