@@ -1,7 +1,11 @@
 class ApiUrl {
   /// Base URL for the API endpoints
   //   static const String baseUrl = 'http://127.0.0.1:8000/api/v1';
-  static const String baseUrl = 'http://10.0.2.2:8000/api/v1';
+  // static const String baseUrl = 'http://10.0.2.2:8000/api/v1';
+  static const String baseUrl = String.fromEnvironment(
+    'BASE_URL',
+    defaultValue: 'http://10.0.2.2:8000/api/v1',
+  );
   // static const String baseUrl = 'https://backend.zekx.eu.org/api/v1';
 
   /// Authentication endpoints
