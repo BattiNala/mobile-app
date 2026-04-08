@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
@@ -13,7 +14,7 @@ class ImagePreprocessor {
 
       if (image == null) return filePath;
 
-      print(
+      debugPrint(
         'AI Debug: Pre-processing image (original: ${image.width}x${image.height})',
       );
 
@@ -30,7 +31,7 @@ class ImagePreprocessor {
           height: image.height >= image.width ? 1200 : null,
           interpolation: img.Interpolation.linear,
         );
-        print('AI Debug: Downscaled to ${image.width}x${image.height}');
+        debugPrint('AI Debug: Downscaled to ${image.width}x${image.height}');
       }
 
       // 2. Adaptive contrast/brightness for scene type
@@ -60,10 +61,10 @@ class ImagePreprocessor {
       final encoded = img.encodeJpg(sharpened, quality: 90);
       await File(enhancedPath).writeAsBytes(encoded);
 
-      print('AI Debug: Enhanced image saved at $enhancedPath');
+      debugPrint('AI Debug: Enhanced image saved at $enhancedPath');
       return enhancedPath;
     } catch (e) {
-      print('AI Debug: Pre-processing failed, using original: $e');
+      debugPrint('AI Debug: Pre-processing failed, using original: $e');
       return filePath;
     }
   }

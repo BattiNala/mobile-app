@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:image/image.dart' as img;
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:batti_nala/core/services/ml_kit_service.dart';
@@ -35,30 +36,30 @@ class DetectionResult {
 class ImprovedImageAnalyzer {
   /// Main analysis coordinator following the 3-tier strategy
   static DetectionResult analyze(AIAnalysisResult aiResult, {File? imageFile}) {
-    print('═══════════════════════════════════════════════════════════');
-    print('🔍 IMPROVED MULTI-TIER ANALYSIS');
-    print('═══════════════════════════════════════════════════════════');
+    debugPrint('═══════════════════════════════════════════════════════════');
+    debugPrint('🔍 IMPROVED MULTI-TIER ANALYSIS');
+    debugPrint('═══════════════════════════════════════════════════════════');
 
     final labels = aiResult.labels;
     final objects = aiResult.objects;
 
-    print('\n📊 ML Kit Results:');
-    print('  Labels: ${labels.length}');
-    print('  Objects: ${objects.length}');
+    debugPrint('\n📊 ML Kit Results:');
+    debugPrint('  Labels: ${labels.length}');
+    debugPrint('  Objects: ${objects.length}');
 
     // === STEP 1: REJECTION CHECK (SOFT GATE) ===
-    print('\n[STEP 1] Checking for non-infrastructure...');
+    debugPrint('\n[STEP 1] Checking for non-infrastructure...');
     final rejectionResult = ImprovedKeywordMatcher.checkRejection(labels);
     if (rejectionResult.hasMatch) {
-      print(
+      debugPrint(
         '  ⚠️ Rejection signals found, but continuing to verify infrastructure first...',
       );
     } else {
-      print('  ✓ No high-confidence rejection keywords found');
+      debugPrint('  ✓ No high-confidence rejection keywords found');
     }
 
     if (_hasHumanSignals(labels)) {
-      print('❌ REJECTED: Human/person image detected');
+      debugPrint('❌ REJECTED: Human/person image detected');
       return DetectionResult(
         category: Category.rejected,
         priority: 'LOW',
@@ -71,7 +72,7 @@ class ImprovedImageAnalyzer {
     }
 
     if (_hasFireSmokeSignals(labels)) {
-      print(
+      debugPrint(
         '✅ FIRE/SMOKE DETECTED: Auto-filling electrical with HIGH priority',
       );
       return DetectionResult(
@@ -91,7 +92,7 @@ class ImprovedImageAnalyzer {
     }
 
     if (!_hasInfrastructureSignals(labels, objects, imageFile)) {
-      print('❌ REJECTED: No sewage/electrical infrastructure evidence');
+      debugPrint('❌ REJECTED: No sewage/electrical infrastructure evidence');
       return DetectionResult(
         category: Category.rejected,
         priority: 'LOW',
@@ -104,18 +105,18 @@ class ImprovedImageAnalyzer {
     }
 
     // === STEP 2: SHAPE ANALYSIS ===
-    print('\n[STEP 2] Analyzing object shapes...');
+    debugPrint('\n[STEP 2] Analyzing object shapes...');
     final shapeResults = objects
         .map((obj) => ImprovedShapeAnalyzer.analyzeObject(obj))
         .toList();
 
     // === TIER 1: ML KIT + SHAPE (Primary) ===
-    print('\n[TIER 1] ML Kit Label + Shape Detection...');
+    debugPrint('\n[TIER 1] ML Kit Label + Shape Detection...');
     final tier1Result = _runTier1(labels, shapeResults);
 
     if (tier1Result != null &&
         tier1Result.confidence >= DetectionConfig.mlKitMinConfidence) {
-      print('✅ TIER 1 SUCCESS');
+      debugPrint('✅ TIER 1 SUCCESS');
       return _finalizeResult(
         tier1Result,
         labels,
@@ -124,15 +125,15 @@ class ImprovedImageAnalyzer {
       );
     }
 
-    print('⚠️  Tier 1 FAILED: Insufficient confidence, trying Tier 2...');
+    debugPrint('⚠️  Tier 1 FAILED: Insufficient confidence, trying Tier 2...');
 
     // === TIER 2: KEYWORD INFERENCE (Secondary) ===
-    print('\n[TIER 2] Keyword Inference Fallback (STRICT MODE)...');
+    debugPrint('\n[TIER 2] Keyword Inference Fallback (STRICT MODE)...');
     final tier2Result = _runTier2(labels, shapeResults);
 
     if (tier2Result != null &&
         tier2Result.confidence >= DetectionConfig.inferenceMinConfidence) {
-      print('✅ TIER 2 SUCCESS');
+      debugPrint('✅ TIER 2 SUCCESS');
       return _finalizeResult(
         tier2Result,
         labels,
@@ -141,17 +142,17 @@ class ImprovedImageAnalyzer {
       );
     }
 
-    print('⚠️  Tier 2 FAILED: Trying Tier 3...');
+    debugPrint('⚠️  Tier 2 FAILED: Trying Tier 3...');
 
     // === TIER 3: IMAGE PROPERTIES (Tertiary) ===
     if (imageFile != null) {
-      print('\n[TIER 3] Image Properties Analysis...');
+      debugPrint('\n[TIER 3] Image Properties Analysis...');
       final tier3Result = _runTier3(imageFile, labels);
 
       if (tier3Result != null &&
           tier3Result.confidence >=
               DetectionConfig.imagePropertiesMinConfidence) {
-        print('✅ TIER 3 SUCCESS');
+        debugPrint('✅ TIER 3 SUCCESS');
         return _finalizeResult(
           tier3Result,
           labels,
@@ -162,7 +163,7 @@ class ImprovedImageAnalyzer {
     }
 
     if (rejectionResult.hasMatch) {
-      print('❌ REJECTED: Non-infrastructure detected');
+      debugPrint('❌ REJECTED: Non-infrastructure detected');
       return DetectionResult(
         category: Category.rejected,
         priority: 'LOW',
@@ -175,7 +176,7 @@ class ImprovedImageAnalyzer {
     }
 
     // === FINAL: ALL TIERS FAILED ===
-    print('\n❌ ALL TIERS FAILED: Cannot detect infrastructure');
+    debugPrint('\n❌ ALL TIERS FAILED: Cannot detect infrastructure');
     return DetectionResult(
       category: Category.rejected,
       priority: 'LOW',
@@ -216,7 +217,7 @@ class ImprovedImageAnalyzer {
       Category.sewage,
     );
 
-    print(
+    debugPrint(
       '  Final Electrical: ${elecScore.confidence.toStringAsFixed(2)}, '
       'Sewage: ${sewageScore.confidence.toStringAsFixed(2)}',
     );
@@ -261,7 +262,7 @@ class ImprovedImageAnalyzer {
       final thumbnail = img.copyResize(image, width: 200, height: 200);
 
       final properties = _sampleImageProperties(thumbnail);
-      print('  Properties: $properties');
+      debugPrint('  Properties: $properties');
       final hasElectricalSignals = _hasElectricalSignals(labels);
       final hasSewageSignals = _hasSewageSignals(labels);
       final hasFireSignals = _hasFireSignals(labels);
@@ -326,7 +327,7 @@ class ImprovedImageAnalyzer {
         );
       }
     } catch (e) {
-      print('  ❌ Tier 3 Error: $e');
+      debugPrint('  ❌ Tier 3 Error: $e');
     }
     return null;
   }
@@ -795,7 +796,7 @@ class ImprovedImageAnalyzer {
         final boost = DetectionConfig.shapeConfidenceBoost * shape.confidence;
         confidence += boost;
         keywords.add('✓shape_confirmed(${shape.primaryShape.name})');
-        print(
+        debugPrint(
           '  Shape boost: +${boost.toStringAsFixed(2)} '
           '(${shape.primaryShape.name} matches ${match.detectedType})',
         );

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:batti_nala/core/constants/api_url.dart';
 import 'package:batti_nala/core/networks/dio_client.dart';
 import 'package:batti_nala/features/issue_report/models/issue_type_model.dart';
 import 'package:batti_nala/features/issue_report/models/create_issue_request.dart';
@@ -18,7 +19,7 @@ class IssueRepository {
 
   /// Fetch available issue types (used when creating an issue)
   Future<IssueTypeModel> getIssueTypes() async {
-    final response = await _dioClient.get('/issues/get-issue-types');
+    final response = await _dioClient.get(ApiUrl.issueTypes);
     return IssueTypeModel.fromJson(response.data);
   }
 
@@ -47,14 +48,13 @@ class IssueRepository {
       );
     }
 
-    final response = await _dioClient.post('/issues/create', data: formData);
+    final response = await _dioClient.post(ApiUrl.createIssue, data: formData);
     return IssueModel.fromJson(response.data);
   }
 
   /// Get all issues reported by the current citizen
   Future<List<IssueModel>> getCitizenIssues() async {
-    final response = await _dioClient.get('/issues/my-issues');
-    // The backend might return the list under 'items' or 'issues' depending on the exact endpoint logic
+    final response = await _dioClient.get(ApiUrl.citizenIssues);
     final rawIssues = response.data['items'] ?? response.data['issues'] ?? [];
     final issues = rawIssues as List;
     return issues.map((json) => IssueModel.fromJson(json)).toList();
@@ -88,7 +88,7 @@ class IssueRepository {
     required String status,
   }) async {
     await _dioClient.post(
-      '/issues/update-status',
+      ApiUrl.updateStatus,
       data: {'issue_label': issueLabel, 'status': status},
     );
   }

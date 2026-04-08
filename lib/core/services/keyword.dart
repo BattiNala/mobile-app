@@ -1,4 +1,5 @@
 import 'package:batti_nala/core/services/detection.dart';
+import 'package:flutter/rendering.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 
 class KeywordMatchResult {
@@ -75,7 +76,7 @@ class ImprovedKeywordMatcher {
             typePriorities[type] = typePriorities[type] ?? [];
             typePriorities[type]!.add(priority);
 
-            print(
+            debugPrint(
               '  Matched "$keyword" in "$text" -> $type '
               '(score: ${matchScore.toStringAsFixed(2)})',
             );
@@ -121,7 +122,7 @@ class ImprovedKeywordMatcher {
     final priorities = typePriorities[bestType]!;
     final avgPriority = priorities.reduce((a, b) => a + b) / priorities.length;
 
-    print(
+    debugPrint(
       '  Best match: $bestType (conf: ${bestConfidence.toStringAsFixed(2)}, '
       'matches: ${keywords.length}, avgPriority: ${avgPriority.toStringAsFixed(1)})',
     );
@@ -173,7 +174,7 @@ class ImprovedKeywordMatcher {
 
   /// Check for rejection keywords
   static KeywordMatchResult checkRejection(List<ImageLabel> labels) {
-    final rejectionKeywords = DetectionKeywords.rejection;
+    const rejectionKeywords = DetectionKeywords.rejection;
     final matches = <String>[];
     double maxConfidence = 0.0;
 
@@ -191,12 +192,12 @@ class ImprovedKeywordMatcher {
             if (labelConfidence > maxConfidence) {
               maxConfidence = labelConfidence;
             }
-            print(
+            debugPrint(
               '  REJECTION: Found "$keyword" in "$text" '
               '(conf: ${labelConfidence.toStringAsFixed(2)})',
             );
           } else {
-            print(
+            debugPrint(
               '  Ignored low-conf rejection: "$keyword" in "$text" '
               '(conf: ${labelConfidence.toStringAsFixed(2)})',
             );
@@ -216,7 +217,7 @@ class ImprovedKeywordMatcher {
 
   /// Check for context keywords that boost confidence
   static double calculateContextBoost(List<ImageLabel> labels) {
-    final contextKeywords = DetectionKeywords.positiveContext;
+    const contextKeywords = DetectionKeywords.positiveContext;
     int matchedSignals = 0;
     final matches = <String>[];
 
@@ -238,7 +239,7 @@ class ImprovedKeywordMatcher {
         .clamp(0.0, DetectionConfig.maxContextBoost);
 
     if (boost > 0) {
-      print('  Context boost: +${boost.toStringAsFixed(2)} from $matches');
+      debugPrint('  Context boost: +${boost.toStringAsFixed(2)} from $matches');
     }
 
     return boost;
@@ -246,7 +247,7 @@ class ImprovedKeywordMatcher {
 
   /// Assess priority level
   static String assessPriority(List<ImageLabel> labels) {
-    final priorityDict = DetectionKeywords.priority;
+    const priorityDict = DetectionKeywords.priority;
 
     // Check HIGH priority first
     for (var label in labels) {
@@ -254,7 +255,7 @@ class ImprovedKeywordMatcher {
 
       for (var keywordEntry in priorityDict['HIGH']!) {
         if (text.contains(keywordEntry.keyword.toLowerCase())) {
-          print('  Priority: HIGH (keyword: ${keywordEntry.keyword})');
+          debugPrint('  Priority: HIGH (keyword: ${keywordEntry.keyword})');
           return 'HIGH';
         }
       }
@@ -266,13 +267,13 @@ class ImprovedKeywordMatcher {
 
       for (var keywordEntry in priorityDict['NORMAL']!) {
         if (text.contains(keywordEntry.keyword.toLowerCase())) {
-          print('  Priority: NORMAL (keyword: ${keywordEntry.keyword})');
+          debugPrint('  Priority: NORMAL (keyword: ${keywordEntry.keyword})');
           return 'NORMAL';
         }
       }
     }
 
-    print('  Priority: LOW (no priority keywords found)');
+    debugPrint('  Priority: LOW (no priority keywords found)');
     return 'LOW';
   }
 }

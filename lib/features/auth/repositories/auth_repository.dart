@@ -97,7 +97,8 @@ class AuthRepository {
         return authResponse;
       } else {
         throw AuthError(
-          detail: '(AuthRepository) Unexpected status code: ${response.statusCode}',
+          detail:
+              '(AuthRepository) Unexpected status code: ${response.statusCode}',
         );
       }
     } on DioException catch (e) {
@@ -157,22 +158,6 @@ class AuthRepository {
       print(' [AUTH_REPOSITORY] Logging out user and clearing tokens');
     }
     await _storage.clearAll();
-  }
-
-  String _extractAuthErrorDetail(dynamic data, String fallback) {
-    if (data is Map) {
-      final detail = data['detail'];
-      if (detail is String && detail.trim().isNotEmpty) {
-        return detail.trim();
-      }
-      final message = data['message'];
-      if (message is String && message.trim().isNotEmpty) {
-        return message.trim();
-      }
-      return data.toString();
-    }
-    if (data is String && data.trim().isNotEmpty) return data.trim();
-    return fallback;
   }
 
   /// Request a password reset OTP (email/SMS) for the given username.
@@ -323,6 +308,23 @@ class AuthRepository {
       }
       throw Exception('Network error: ${e.message}');
     }
+  }
+
+  /// Helper method to extract error details from API responses
+  String _extractAuthErrorDetail(dynamic data, String fallback) {
+    if (data is Map) {
+      final detail = data['detail'];
+      if (detail is String && detail.trim().isNotEmpty) {
+        return detail.trim();
+      }
+      final message = data['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+      return data.toString();
+    }
+    if (data is String && data.trim().isNotEmpty) return data.trim();
+    return fallback;
   }
 }
 

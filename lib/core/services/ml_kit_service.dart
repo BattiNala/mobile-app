@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:batti_nala/core/services/image_preprocessor.dart';
 
@@ -33,7 +34,7 @@ class MLKitService {
   }
 
   Future<AIAnalysisResult> processImage(String filePath) async {
-    print('AI Debug: Starting Multi-Model Analysis...');
+    debugPrint('AI Debug: Starting Multi-Model Analysis...');
 
     // 1. Pre-process image for better clarity
     final enhancedPath = await ImagePreprocessor.preprocess(filePath);
@@ -52,7 +53,7 @@ class MLKitService {
       objects = results[1] as List<DetectedObject>;
     } catch (e) {
       if (e.toString().contains('MissingPluginException')) {
-        print(
+        debugPrint(
           'AI Debug: ObjectDetector not yet linked (Restart required). Falling back to Labeler only.',
         );
         labels = await _labeler.processImage(inputImage);
@@ -61,17 +62,19 @@ class MLKitService {
       }
     }
 
-    print(
+    debugPrint(
       'AI Debug: Completed with ${labels.length} labels and ${objects.length} objects',
     );
 
     for (var label in labels) {
-      print('AI Debug: Label: ${label.label}, Confidence: ${label.confidence}');
+      debugPrint(
+        'AI Debug: Label: ${label.label}, Confidence: ${label.confidence}',
+      );
     }
 
     for (var object in objects) {
       final rect = object.boundingBox;
-      print(
+      debugPrint(
         'AI Debug: Object found at [${rect.left.toInt()}, ${rect.top.toInt()}] '
         'Size: ${rect.width.toInt()}x${rect.height.toInt()}',
       );
