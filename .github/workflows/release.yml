@@ -45,7 +45,7 @@ jobs:
           echo "APK_NAME=app-nightly-${DATE}-${GITHUB_RUN_NUMBER}.apk" >> $GITHUB_ENV
 
       - name: Build release APK
-        run: flutter build apk --release --dart-define=BASE_URL=$BASE_URL
+        run: flutter build apk --release --no-shrink --dart-define=BASE_URL=$BASE_URL
 
       - name: Prepare release file
         run: |
