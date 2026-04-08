@@ -1,3 +1,4 @@
+import 'package:batti_nala/core/constants/api_url.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:batti_nala/core/networks/dio_client.dart';
@@ -15,7 +16,7 @@ class RouteRepository {
 
   Future<RouteResponseModel> getShortestRoute(RouteRequest request) async {
     final response = await _dioClient.post(
-      '/routes/shortest',
+      ApiUrl.shortestRoute,
       data: {
         'start': {
           'latitude': request.start.latitude,

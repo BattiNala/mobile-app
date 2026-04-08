@@ -1,4 +1,5 @@
 import 'package:batti_nala/core/services/detection.dart';
+import 'package:flutter/widgets.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 
 enum ShapeType {
@@ -33,7 +34,7 @@ class ImprovedShapeAnalyzer {
     final aspectRatio = height / width;
     final area = width * height;
 
-    print(
+    debugPrint(
       'Shape Analysis: ${width.toStringAsFixed(0)}x${height.toStringAsFixed(0)}, '
       'AR=${aspectRatio.toStringAsFixed(2)}, area=${area.toStringAsFixed(0)}',
     );
@@ -65,8 +66,8 @@ class ImprovedShapeAnalyzer {
 
     final description = _getShapeDescription(shapeType, confidence);
 
-    print('  Shape Scores: ${_formatScores(scores)}');
-    print(
+    debugPrint('  Shape Scores: ${_formatScores(scores)}');
+    debugPrint(
       '  Result: $shapeType (confidence: ${confidence.toStringAsFixed(2)})',
     );
 

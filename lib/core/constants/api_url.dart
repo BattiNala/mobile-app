@@ -24,4 +24,13 @@ class ApiUrl {
   /// Profile endpoints
   static const String citizenProfile = '$baseUrl/profile/citizen';
   static const String employeeProfile = '$baseUrl/profile/employee';
+
+  /// Issue reporting endpoints
+  static const String issueTypes = '$baseUrl/issues/get-issue-types';
+  static const String createIssue = '$baseUrl/issues/create';
+  static const String citizenIssues = '$baseUrl/issues/my-issues';
+  static const String updateStatus = '$baseUrl/issues/update-status';
+
+  // Route endpoints
+  static const String shortestRoute = '$baseUrl/routes/shortest';
 }
