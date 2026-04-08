@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 env:
-  FLUTTER_VERSION: "3.29.0"
+  FLUTTER_VERSION: "3.41.6"
   BASE_URL: ${{secrets.BASE_URL}}
   APK_NAME: app-nightly-${{ github.run_number }}.apk
 
