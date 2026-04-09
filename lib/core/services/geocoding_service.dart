@@ -25,11 +25,7 @@ class GeocodingService {
           'addressdetails': 1,
         },
         options: Options(
-          headers: {
-            'User-Agent':
-                'BattiNalaApp/1.0 (Flutter; contact: ankitdiyal@gmail.com)',
-            'Accept-Language': 'en',
-          },
+          headers: {'User-Agent': 'BattiNalaApp/1.0', 'Accept-Language': 'en'},
         ),
       );
 

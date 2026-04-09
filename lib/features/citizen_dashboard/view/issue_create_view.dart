@@ -596,11 +596,6 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                       ),
                     ),
 
-                  const SizedBox(height: 24),
-
-                  // Image Picker moved to top
-                  const SizedBox(height: 8),
-
                   const SizedBox(height: 32),
 
                   // Submit Button
@@ -633,16 +628,6 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                   children: [
                     const LoadingIndicator(),
                     if (_isAnalyzing) ...[
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Smart Analysis Running...',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
                       Text(
                         'Detecting issue type & priority',
                         style: TextStyle(

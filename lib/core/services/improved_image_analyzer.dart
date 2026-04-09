@@ -344,6 +344,7 @@ class ImprovedImageAnalyzer {
       'lamp',
       'light',
       'utility',
+      'wires',
     ];
 
     return labels.any((label) {
