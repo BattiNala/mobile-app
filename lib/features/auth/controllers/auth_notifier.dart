@@ -5,7 +5,7 @@ import 'package:batti_nala/features/auth/controllers/auth_state.dart';
 import 'package:batti_nala/features/auth/repositories/auth_repository.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
 import 'package:batti_nala/features/citizen_dashboard/controllers/citizen_dashboard_notifier.dart';
-import 'package:batti_nala/features/staff_dashboard/controller/employee_dashboard_notifier.dart';
+import 'package:batti_nala/features/staff-issue/controllers/employee_dashboard_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((

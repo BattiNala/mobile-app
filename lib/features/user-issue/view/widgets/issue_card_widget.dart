@@ -1,5 +1,5 @@
 import 'package:batti_nala/core/constants/colors.dart';
-import 'package:batti_nala/features/issue_report/models/issue_model.dart';
+import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
 import 'package:flutter/material.dart';
 
 class IssueCardWidget extends StatelessWidget {

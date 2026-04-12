@@ -1,3 +1,4 @@
+import 'package:batti_nala/core/constants/colors.dart';
 import 'package:flutter/material.dart';
 
 class LoadingIndicator extends StatelessWidget {
@@ -31,15 +32,14 @@ class LoadingIndicator extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 24),
 
           // Text with shimmer
           const Text(
-            'Loading',
+            'Loading...',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.grey,
+              color: Colors.black,
             ),
           ),
           const SizedBox(height: 16),
@@ -49,8 +49,8 @@ class LoadingIndicator extends StatelessWidget {
             width: 200,
             child: LinearProgressIndicator(
               backgroundColor: Colors.grey[200],
-              valueColor: AlwaysStoppedAnimation<Color>(
-                Theme.of(context).primaryColor,
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.primaryBlue,
               ),
             ),
           ),

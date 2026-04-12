@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/widgets/loading_indicator.dart';
-import 'package:batti_nala/features/staff_dashboard/controller/employee_issue_detail_notifier.dart';
-import 'package:batti_nala/features/staff_dashboard/view/widgets/issue_detail_header.dart';
-import 'package:batti_nala/features/staff_dashboard/view/widgets/issue_status_bar.dart';
-import 'package:batti_nala/features/staff_dashboard/view/widgets/issue_priority_row.dart';
-import 'package:batti_nala/features/staff_dashboard/view/widgets/issue_location_card.dart';
-import 'package:batti_nala/features/staff_dashboard/view/widgets/issue_image_gallery.dart';
-import 'package:batti_nala/features/staff_dashboard/view/widgets/issue_meta_info_card.dart';
-import 'package:batti_nala/features/staff_dashboard/view/widgets/issue_status_action_bar.dart';
-import 'package:batti_nala/features/staff_dashboard/view/widgets/section_heading.dart';
+import 'package:batti_nala/features/staff-issue/controllers/employee_issue_detail_notifier.dart';
+import 'package:batti_nala/features/staff-issue/view/widgets/issue_detail_header.dart';
+import 'package:batti_nala/features/staff-issue/view/widgets/issue_status_bar.dart';
+import 'package:batti_nala/features/staff-issue/view/widgets/issue_priority_row.dart';
+import 'package:batti_nala/features/staff-issue/view/widgets/issue_location_card.dart';
+import 'package:batti_nala/features/staff-issue/view/widgets/issue_image_gallery.dart';
+import 'package:batti_nala/features/staff-issue/view/widgets/issue_meta_info_card.dart';
+import 'package:batti_nala/features/staff-issue/view/widgets/issue_status_action_bar.dart';
+import 'package:batti_nala/features/staff-issue/view/widgets/section_heading.dart';
 import 'package:go_router/go_router.dart';
 
 class EmployeeIssueDetailView extends ConsumerWidget {

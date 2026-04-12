@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:batti_nala/features/issue_report/models/issue_model.dart';
-import 'package:batti_nala/features/issue_report/repository/issue_repository.dart';
-import 'package:batti_nala/features/staff_dashboard/controller/employee_dashboard_notifier.dart';
+import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
+import 'package:batti_nala/features/shared-issue/repository/issue_repository.dart';
+import 'package:batti_nala/features/staff-issue/controllers/employee_dashboard_notifier.dart';
 
 class EmployeeIssueDetailNotifier extends StateNotifier<AsyncValue<IssueModel>> {
   EmployeeIssueDetailNotifier(this.ref, this._repository, this.issueLabel)

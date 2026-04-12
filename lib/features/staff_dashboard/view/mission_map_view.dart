@@ -9,7 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/staff_dashboard/model/route_model.dart';
 import 'package:batti_nala/features/staff_dashboard/repository/route_repository.dart';
-import 'package:batti_nala/features/issue_report/models/issue_model.dart';
+import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
 
 class MissionMapView extends ConsumerStatefulWidget {
   final IssueModel issue;

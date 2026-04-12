@@ -1,5 +1,5 @@
-import 'package:batti_nala/features/issue_report/models/issue_model.dart';
-import 'package:batti_nala/features/issue_report/repository/issue_repository.dart';
+import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
+import 'package:batti_nala/features/shared-issue/repository/issue_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class IssueDetailState {
