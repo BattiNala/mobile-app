@@ -1,6 +1,6 @@
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/citizen_dashboard/controllers/citizen_dashboard_notifier.dart';
-import 'package:batti_nala/features/citizen_dashboard/view/widgets/issue_card_widget.dart';
+import 'package:batti_nala/features/user-issue/view/widgets/issue_card_widget.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +18,48 @@ class CitizenDashboardView extends ConsumerWidget {
     final profileState = ref.watch(profileNotifierProvider);
     final profileController = ref.read(profileNotifierProvider.notifier);
     final citizenProfile = profileState.citizenProfile;
+
+    if (profileState.errorMessage != null && reports.isEmpty) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          title: const Text('Dashboard'),
+          backgroundColor: AppColors.primaryBlue900,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.wifi_off_rounded, size: 80, color: Colors.grey),
+              const SizedBox(height: 16),
+              const Text('Connection Failed',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryBlue900)),
+              const SizedBox(height: 8),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 32.0),
+                child: Text('Could not connect to the server. Please check your internet connection or ensure the backend is running.',
+                    textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () async {
+                  await dashboardController.refreshReports();
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Retry'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryBlue900,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+              )
+            ],
+          ),
+        ),
+      );
+    }
 
     if (profileState.isLoading) {
       return Scaffold(

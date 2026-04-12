@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/widgets/action_button.dart';
-import 'package:batti_nala/features/staff_dashboard/controller/employee_issue_detail_notifier.dart';
+import 'package:batti_nala/features/staff-issue/controllers/employee_issue_detail_notifier.dart';
 
 class IssueStatusActionBar extends ConsumerWidget {
   final String status;

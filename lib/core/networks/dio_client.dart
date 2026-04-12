@@ -19,13 +19,7 @@ final dioProvider = Provider<Dio>((ref) {
 
   // Add interceptors if needed (e.g., for logging, authentication, etc.)
   dio.interceptors.add(
-    LogInterceptor(
-      request: true,
-      requestBody: true,
-      responseBody: true,
-      responseHeader: false,
-      requestHeader: false,
-    ),
+    LogInterceptor(request: true, requestBody: true, responseBody: true),
   );
 
   dio.interceptors.add(AuthInterceptor(ref.read(storageServiceProvider)));

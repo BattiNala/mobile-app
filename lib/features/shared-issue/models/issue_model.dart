@@ -7,6 +7,7 @@ class IssueModel {
   final String? assignedTo;
   final DateTime createdAt;
   final List<String> attachments;
+  final String rejectedReason;
   final String issueLocation;
   final double latitude;
   final double longitude;
@@ -21,6 +22,7 @@ class IssueModel {
     this.assignedTo,
     required this.createdAt,
     required this.attachments,
+    required this.rejectedReason,
     required this.issueLocation,
     required this.latitude,
     required this.longitude,
@@ -44,6 +46,7 @@ class IssueModel {
       attachments:
           (json['attachments'] as List?)?.map((e) => e.toString()).toList() ??
           [],
+      rejectedReason: json['rejected_reason']?.toString() ?? '',
       issueLocation: json['issue_location']?.toString() ?? 'Location unknown',
       latitude: double.tryParse(json['latitude']?.toString() ?? '0') ?? 0.0,
       longitude: double.tryParse(json['longitude']?.toString() ?? '0') ?? 0.0,

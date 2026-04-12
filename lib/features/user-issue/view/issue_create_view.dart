@@ -1,23 +1,22 @@
 import 'dart:io';
-import 'package:batti_nala/core/services/improved_image_analyzer.dart';
 import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/widgets/action_button.dart';
 import 'package:batti_nala/core/widgets/loading_indicator.dart';
-import 'package:batti_nala/features/issue_report/controllers/create_issue_state.dart';
-import 'package:batti_nala/features/issue_report/models/issue_type_model.dart';
-import 'package:batti_nala/features/issue_report/repository/issue_repository.dart';
-import 'package:batti_nala/features/citizen_dashboard/view/widgets/image_picker_grid.dart';
-import 'package:batti_nala/features/citizen_dashboard/view/widgets/issue_type_selector.dart';
-import 'package:batti_nala/features/citizen_dashboard/view/widgets/location_picker.dart';
-import 'package:batti_nala/features/citizen_dashboard/view/widgets/priority_selector.dart';
-import 'package:batti_nala/core/services/ml_kit_service.dart';
+import 'package:batti_nala/features/user-issue/controllers/create_issue_state.dart';
+import 'package:batti_nala/features/shared-issue/models/issue_type_model.dart';
+import 'package:batti_nala/features/shared-issue/repository/issue_repository.dart';
+import 'package:batti_nala/features/user-issue/view/widgets/image_picker_grid.dart';
+import 'package:batti_nala/features/user-issue/view/widgets/issue_type_selector.dart';
+import 'package:batti_nala/features/user-issue/view/widgets/location_picker.dart';
+import 'package:batti_nala/features/user-issue/view/widgets/priority_selector.dart';
+import 'package:batti_nala/core/services/gemini_analyzer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:batti_nala/features/issue_report/controllers/location_notifier.dart';
-import 'package:batti_nala/features/issue_report/controllers/location_state.dart';
-import 'package:batti_nala/features/issue_report/controllers/create_issue_controller.dart';
+import 'package:batti_nala/features/user-issue/controllers/location_notifier.dart';
+import 'package:batti_nala/features/user-issue/controllers/location_state.dart';
+import 'package:batti_nala/features/user-issue/controllers/create_issue_controller.dart';
 
 final issueTypesProvider = FutureProvider<List<IssueType>>((ref) async {
   final repository = ref.watch(issueRepositoryProvider);
@@ -35,14 +34,12 @@ class ReportIssueScreen extends ConsumerStatefulWidget {
 class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
   final _descriptionController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final _mlKitService = MLKitService();
   bool _isAnalyzing = false;
   int _analysisInFlight = 0;
 
   @override
   void dispose() {
     _descriptionController.dispose();
-    _mlKitService.dispose();
     super.dispose();
   }
 
@@ -53,26 +50,20 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     }
 
     try {
-      final aiResult = await _mlKitService.processImage(path);
-      // Pass the original path for color analysis
-      final result = ImprovedImageAnalyzer.analyze(
-        aiResult,
-        imageFile: File(path),
-      );
+      final result = await GeminiAnalyzer.analyzeImage(File(path));
 
       if (mounted) {
         _analysisInFlight = (_analysisInFlight - 1).clamp(0, 999999);
         setState(() => _isAnalyzing = _analysisInFlight > 0);
 
-        if (result.isValid) {
+        if (result.issueType != 'none') {
           _showDetectionSummary(result);
         } else {
-          final englishMessage = result.rejectionReason.isNotEmpty
-              ? result.rejectionReason
-              : 'Could not detect sewage or electrical infrastructure.';
-          final nepaliMessage = result.rejectionReason.isNotEmpty
-              ? 'कृपया ढल वा विद्युत् सम्बन्धी फोटो मात्र अपलोड गर्नुहोस्।'
-              : 'ढल वा विद्युत् सम्बन्धी संरचना भेटिएन। कृपया स्पष्ट फोटो अपलोड गर्नुहोस्।';
+          final englishMessage = result.description.isNotEmpty
+              ? result.description
+              : 'Could not detect sewage, electrical or road infrastructure.';
+          const nepaliMessage =
+              'पूर्वाधार सम्बन्धी समस्या भेटिएन। कृपया स्पष्ट फोटो अपलोड गर्नुहोस्।';
 
           SnackbarService.showErrorDialog(
             context,
@@ -81,7 +72,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
             nepaliMessage: nepaliMessage,
             buttonText: 'OK',
           );
-          debugPrint('Detection invalid: ${result.rejectionReason}');
+          debugPrint('Detection invalid: ${result.description}');
         }
       }
     } catch (e) {
@@ -102,7 +93,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     }
   }
 
-  void _showDetectionSummary(DetectionResult result) {
+  void _showDetectionSummary(GeminiAnalyzerResult result) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -120,7 +111,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
           children: [
             _buildSummaryRow(
               'Issue Type',
-              result.specificType ?? 'Unknown',
+              result.issueType,
               Icons.category_rounded,
             ),
             const SizedBox(height: 12),
@@ -159,7 +150,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
     );
   }
 
-  void _applyDetection(DetectionResult result) async {
+  void _applyDetection(GeminiAnalyzerResult result) async {
     final controller = ref.read(createIssueControllerProvider.notifier);
     final typesAsync = ref.read(issueTypesProvider);
 
@@ -178,17 +169,12 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
     // Update description if it's empty or add keywords
     String newDesc = _descriptionController.text;
-    final detectedTypeLabel =
-        result.specificType ??
-        (result.category == Category.electrical
-            ? 'Electrical issue'
-            : 'Sewage issue');
+    final detectedTypeLabel = result.issueType;
 
     if (newDesc.isEmpty) {
-      newDesc =
-          'Detected $detectedTypeLabel: ${result.matchedKeywords.join(", ")}';
+      newDesc = 'Detected $detectedTypeLabel: ${result.description}';
     } else {
-      newDesc += '\n[AI detected: ${result.matchedKeywords.join(", ")}]';
+      newDesc += '\n[AI detected: ${result.description}]';
     }
     _descriptionController.text = newDesc;
     controller.updateDescription(newDesc);
@@ -198,11 +184,11 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
   IssueType? _findBestIssueTypeMatch(
     List<IssueType> types,
-    DetectionResult result,
+    GeminiAnalyzerResult result,
   ) {
     if (types.isEmpty) return null;
 
-    final specific = result.specificType?.toLowerCase().trim() ?? '';
+    final specific = result.issueType.toLowerCase().trim();
 
     final directMatch = types.where((t) {
       final type = t.issueType.toLowerCase().trim();
@@ -210,47 +196,6 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
       return type.contains(specific) || specific.contains(type);
     }).toList();
     if (directMatch.isNotEmpty) return directMatch.first;
-
-    for (final keyword in result.matchedKeywords) {
-      final normalizedKeyword = keyword.toLowerCase().trim();
-      final keywordMatch = types.where((t) {
-        final type = t.issueType.toLowerCase().trim();
-        return type.contains(normalizedKeyword) ||
-            normalizedKeyword.contains(type);
-      }).toList();
-
-      if (keywordMatch.isNotEmpty) {
-        return keywordMatch.first;
-      }
-    }
-
-    final categoryKeywords = result.category == Category.electrical
-        ? [
-            'electric',
-            'electricity',
-            'power',
-            'wire',
-            'pole',
-            'transformer',
-            'light',
-          ]
-        : [
-            'sewage',
-            'sewer',
-            'drain',
-            'drainage',
-            'manhole',
-            'pipeline',
-            'wastewater',
-            'water',
-          ];
-
-    for (final t in types) {
-      final normalized = t.issueType.toLowerCase();
-      if (categoryKeywords.any(normalized.contains)) {
-        return t;
-      }
-    }
 
     return types.first;
   }

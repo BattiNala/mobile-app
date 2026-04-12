@@ -1,13 +1,12 @@
-import 'package:batti_nala/core/services/location_service.dart';
 import 'package:batti_nala/core/services/geocoding_service.dart';
-import 'package:batti_nala/features/issue_report/controllers/location_state.dart';
+import 'package:batti_nala/core/services/location_service.dart';
+import 'package:batti_nala/features/user-issue/controllers/location_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class LocationNotifier extends StateNotifier<LocationState> {
   final LocationService _locationService;
-  final GeocodingService _geocodingService;
 
-  LocationNotifier(this._locationService, this._geocodingService)
+  LocationNotifier(this._locationService)
     : super(const LocationState.initial());
 
   Future<void> fetchCurrentLocation() async {
@@ -17,8 +16,7 @@ class LocationNotifier extends StateNotifier<LocationState> {
       final coords = await _locationService.getCurrentCoordinates();
       if (!mounted) return;
 
-      // Use geocoding for more accurate results
-      final address = await _geocodingService.getAddressFromCoordinates(
+      final address = await getAddressFromCoordinates(
         coords.latitude,
         coords.longitude,
       );
@@ -59,6 +57,5 @@ class LocationNotifier extends StateNotifier<LocationState> {
 final locationNotifierProvider =
     StateNotifierProvider<LocationNotifier, LocationState>((ref) {
       final locationService = ref.read(locationServiceProvider);
-      final geocodingService = ref.read(geocodingServiceProvider);
-      return LocationNotifier(locationService, geocodingService);
+      return LocationNotifier(locationService);
     });

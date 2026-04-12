@@ -1,5 +1,5 @@
 import 'package:batti_nala/features/auth/view/verify_otp_screen.dart';
-import 'package:batti_nala/features/citizen_dashboard/view/issue_create_view.dart';
+import 'package:batti_nala/features/user-issue/view/issue_create_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
@@ -10,9 +10,9 @@ import 'package:batti_nala/features/onboarding/onboarding_screen.dart';
 import 'package:batti_nala/features/citizen_dashboard/view/citizen_dashboard_view.dart';
 import 'package:batti_nala/features/staff_dashboard/view/dashboard_screen.dart';
 import 'package:batti_nala/features/auth/view/password_reset_screen.dart';
-import 'package:batti_nala/features/citizen_dashboard/view/issue_detail_view.dart';
-import 'package:batti_nala/features/staff_dashboard/view/employee_issue_detail_view.dart';
-import 'package:batti_nala/features/issue_report/models/issue_model.dart';
+import 'package:batti_nala/features/user-issue/view/issue_detail_view.dart';
+import 'package:batti_nala/features/staff-issue/view/employee_issue_detail_view.dart';
+import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
 import 'package:batti_nala/features/staff_dashboard/view/mission_map_view.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {

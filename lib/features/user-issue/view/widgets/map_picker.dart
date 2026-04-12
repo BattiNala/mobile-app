@@ -1,4 +1,5 @@
 import 'package:batti_nala/core/constants/colors.dart';
+import 'package:batti_nala/core/services/geocoding_service.dart';
 import 'package:batti_nala/core/widgets/action_button.dart';
 import 'package:batti_nala/core/services/location_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -81,23 +82,22 @@ class _MapPickerState extends ConsumerState<MapPicker> {
       final coords = await _locationService.getCurrentCoordinates(
         timeLimit: const Duration(seconds: 10),
       );
-
+      if (!mounted) return;
       setState(() {
         _selectedLocation = LatLng(coords.latitude, coords.longitude);
         _mapController.move(_selectedLocation, 15);
         _currentZoom = 15;
-        _updateAddressFromCoordinates(coords.latitude, coords.longitude);
         _isLoading = false;
       });
+      await _updateAddressFromCoordinates(coords.latitude, coords.longitude);
     } catch (e) {
       debugPrint('[MAP] Error getting location: $e');
-      setState(() {
-        _isLoading = false;
-        _updateAddressFromCoordinates(
-          _selectedLocation.latitude,
-          _selectedLocation.longitude,
-        );
-      });
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      await _updateAddressFromCoordinates(
+        _selectedLocation.latitude,
+        _selectedLocation.longitude,
+      );
     }
   }
 
@@ -160,17 +160,14 @@ class _MapPickerState extends ConsumerState<MapPicker> {
     });
   }
 
-  void _updateAddressFromCoordinates(double lat, double lng) {
-    setState(() {
-      _address = _locationService.buildMapAddress(lat, lng);
-    });
+  Future<void> _updateAddressFromCoordinates(double lat, double lng) async {
+    final address = await getAddressFromCoordinates(lat, lng);
+    if (mounted) setState(() => _address = address);
   }
 
   void _onMapTap(TapPosition tapPosition, LatLng point) {
-    setState(() {
-      _selectedLocation = point;
-      _updateAddressFromCoordinates(point.latitude, point.longitude);
-    });
+    setState(() => _selectedLocation = point);
+    _updateAddressFromCoordinates(point.latitude, point.longitude);
   }
 
   void _onMapPositionChanged(MapPosition position, bool hasGesture) {
@@ -178,11 +175,11 @@ class _MapPickerState extends ConsumerState<MapPicker> {
       setState(() {
         _selectedLocation = position.center!;
         _currentZoom = position.zoom ?? _currentZoom;
-        _updateAddressFromCoordinates(
-          _selectedLocation.latitude,
-          _selectedLocation.longitude,
-        );
       });
+      _updateAddressFromCoordinates(
+        _selectedLocation.latitude,
+        _selectedLocation.longitude,
+      );
     }
   }
 

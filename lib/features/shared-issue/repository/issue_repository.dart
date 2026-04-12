@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:batti_nala/core/constants/api_url.dart';
 import 'package:batti_nala/core/networks/dio_client.dart';
-import 'package:batti_nala/features/issue_report/models/issue_type_model.dart';
-import 'package:batti_nala/features/issue_report/models/create_issue_request.dart';
-import 'package:batti_nala/features/issue_report/models/issue_model.dart';
+import 'package:batti_nala/features/shared-issue/models/issue_type_model.dart';
+import 'package:batti_nala/features/user-issue/models/create_issue_request.dart';
+import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 

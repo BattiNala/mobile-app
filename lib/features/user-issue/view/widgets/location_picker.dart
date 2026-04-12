@@ -1,7 +1,7 @@
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/widgets/action_button.dart';
-import 'package:batti_nala/features/issue_report/controllers/location_notifier.dart';
-import 'package:batti_nala/features/citizen_dashboard/view/widgets/map_picker.dart';
+import 'package:batti_nala/features/user-issue/controllers/location_notifier.dart';
+import 'package:batti_nala/features/user-issue/view/widgets/map_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
