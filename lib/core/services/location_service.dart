@@ -23,9 +23,12 @@ class LocationService {
       permission = await Geolocator.requestPermission();
     }
 
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      throw Exception('Location permissions are denied');
+    if (permission == LocationPermission.denied) {
+      throw Exception('PERMISSION_DENIED');
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception('PERMISSION_DENIED_FOREVER');
     }
 
     final position = await Geolocator.getCurrentPosition(

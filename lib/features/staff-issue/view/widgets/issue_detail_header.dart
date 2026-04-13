@@ -4,11 +4,15 @@ import 'package:batti_nala/core/constants/colors.dart';
 class IssueDetailHeader extends StatelessWidget {
   final String issueLabel;
   final String issueType;
+  final String? rejectedReason;
+  final VoidCallback? onReportFalse;
 
   const IssueDetailHeader({
     super.key,
     required this.issueLabel,
     required this.issueType,
+    this.rejectedReason,
+    this.onReportFalse,
   });
 
   @override
@@ -27,6 +31,14 @@ class IssueDetailHeader extends StatelessWidget {
         ),
         onPressed: () => Navigator.of(context).pop(),
       ),
+      actions: [
+        if (onReportFalse != null)
+          IconButton(
+            icon: const Icon(Icons.outlined_flag, color: Colors.white),
+            tooltip: 'Report False',
+            onPressed: onReportFalse,
+          ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: const BoxDecoration(color: AppColors.primaryBlue900),
@@ -75,6 +87,18 @@ class IssueDetailHeader extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
+                    if (rejectedReason != null && rejectedReason!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Flagged: $rejectedReason',
+                        style: TextStyle(
+                          color: Colors.red[200],
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

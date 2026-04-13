@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:dio/dio.dart';
+import 'package:geolocator/geolocator.dart';
 
 class MapPicker extends ConsumerStatefulWidget {
   final Function(double lat, double lng, String address) onLocationSelected;
@@ -28,6 +29,7 @@ class _MapPickerState extends ConsumerState<MapPicker> {
   late LatLng _selectedLocation;
   final MapController _mapController = MapController();
   bool _isLoading = true;
+  String? _errorMessage;
   String _address = '';
   late final LocationService _locationService;
 
@@ -75,8 +77,48 @@ class _MapPickerState extends ConsumerState<MapPicker> {
     });
   }
 
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.location_off, color: Colors.red),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Location Access Denied',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'It seems location permissions are permanently denied. '
+          'To use auto-location, please enable it in system settings, ',
+        ),
+        actions: [
+          ActionButton(
+            label: 'Open Settings',
+            onPressed: () {
+              Geolocator.openAppSettings();
+              Navigator.pop(context);
+            },
+            backgroundColor: AppColors.adminRed,
+            textColor: Colors.white,
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _getCurrentLocation() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
       final coords = await _locationService.getCurrentCoordinates(
@@ -93,7 +135,19 @@ class _MapPickerState extends ConsumerState<MapPicker> {
     } catch (e) {
       debugPrint('[MAP] Error getting location: $e');
       if (!mounted) return;
+
       setState(() => _isLoading = false);
+
+      if (e.toString().contains('PERMISSION_DENIED_FOREVER')) {
+        _showPermissionDialog();
+      } else {
+        String message = 'Could not get location. Try manual selection.';
+        if (e.toString().contains('Location services are disabled')) {
+          message = 'Please enable GPS/Location services.';
+        }
+        setState(() => _errorMessage = message);
+      }
+
       await _updateAddressFromCoordinates(
         _selectedLocation.latitude,
         _selectedLocation.longitude,
@@ -211,8 +265,8 @@ class _MapPickerState extends ConsumerState<MapPicker> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  const BoxShadow(
+                boxShadow: const [
+                  BoxShadow(
                     color: Colors.black12,
                     blurRadius: 4,
                     offset: Offset(0, 2),
@@ -504,6 +558,58 @@ class _MapPickerState extends ConsumerState<MapPicker> {
               ),
             ),
           ),
+
+          // Error Message Banner
+          if (_errorMessage != null)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.adminRed,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                      onPressed: () => setState(() => _errorMessage = null),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -78,9 +78,36 @@ class LocationPicker extends ConsumerWidget {
         if (locationState.errorMessage != null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              locationState.errorMessage!,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
+            child: Column(
+              children: [
+                Text(
+                  locationState.errorMessage!,
+                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+                if (locationState.isPermissionPermanentlyDenied) ...[
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: () => locationNotifier.openSettings(),
+                    icon: const Icon(Icons.settings, size: 18),
+                    label: const Text(
+                      'Open App Settings',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryBlue,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: const BorderSide(color: AppColors.primaryBlue),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
       ],

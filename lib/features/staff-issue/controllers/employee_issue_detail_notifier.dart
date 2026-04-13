@@ -40,6 +40,23 @@ class EmployeeIssueDetailNotifier extends StateNotifier<AsyncValue<IssueModel>> 
       return false;
     }
   }
+
+  /// Report as false issue
+  Future<bool> reportFalseIssue(String reason) async {
+    try {
+      await _repository.reportFalseIssue(
+        issueLabel: issueLabel,
+        reason: reason,
+      );
+      // Re-fetch detail to reflect changes
+      await fetchIssueDetail();
+      // Also refresh the dashboard list
+      ref.read(employeeDashboardProvider.notifier).refreshReports();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }
 
 final employeeIssueDetailProvider = StateNotifierProvider.family<

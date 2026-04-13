@@ -92,4 +92,15 @@ class IssueRepository {
       data: {'issue_label': issueLabel, 'status': status},
     );
   }
+
+  /// Report an issue as false (staff only)
+  Future<void> reportFalseIssue({
+    required String issueLabel,
+    required String reason,
+  }) async {
+    await _dioClient.post(
+      ApiUrl.reportIssue,
+      data: {'issue_label': issueLabel, 'reason': reason},
+    );
+  }
 }
