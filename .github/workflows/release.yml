@@ -4,14 +4,15 @@ on:
   push:
     branches:
       - main
-  # schedule:
-  #   - cron: "0 1 * * *" # runs daily at 01:00 UTC
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 env:
   FLUTTER_VERSION: "3.41.6"
-  BASE_URL: ${{secrets.BASE_URL}}
-  APK_NAME: app-nightly-${{ github.run_number }}.apk
+  BASE_URL: ${{ secrets.BASE_URL }}
+  GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
 jobs:
   build-nightly:
@@ -19,13 +20,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
+          cache: gradle
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -33,28 +35,58 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
+      - name: Cache pub packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.pub-cache
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pub-
+
       - name: Show Flutter version
         run: flutter --version
 
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Set nightly APK name
+      - name: Set release metadata
         run: |
           DATE=$(date +'%Y%m%d')
+          echo "BUILD_DATE=$DATE" >> $GITHUB_ENV
           echo "APK_NAME=app-nightly-${DATE}-${GITHUB_RUN_NUMBER}.apk" >> $GITHUB_ENV
+          echo "RELEASE_TAG=nightly-${DATE}-${GITHUB_RUN_ID}" >> $GITHUB_ENV
+          echo "RELEASE_NAME=Nightly Build ${DATE} #${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
 
       - name: Build release APK
-        run: flutter build apk --release --no-shrink --dart-define=BASE_URL=$BASE_URL
+        run: flutter build apk --release --no-shrink --dart-define=BASE_URL=$BASE_URL --dart-define=GEMINI_API_KEY=$GEMINI_API_KEY
 
       - name: Prepare release file
         run: |
           mkdir -p release
-          mv build/app/outputs/flutter-apk/app-release.apk release/$APK_NAME
+          cp build/app/outputs/flutter-apk/app-release.apk release/$APK_NAME
 
       - name: Upload nightly APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ env.APK_NAME }}
           path: release/${{ env.APK_NAME }}
           if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_NAME }}
+          prerelease: true
+          files: release/${{ env.APK_NAME }}
+          body: |
+            🚀 Nightly Flutter APK
+
+            📦 APK: `${{ env.APK_NAME }}`
+            🌿 Branch: `${{ github.ref_name }}`
+            🔢 Run ID: `${{ github.run_id }}`
+            🧾 Commit: `${{ github.sha }}`
+
+            ⚠️ This is a nightly build and may be unstable.
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
