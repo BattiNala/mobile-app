@@ -306,6 +306,30 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
         elevation: 0,
       ),
       backgroundColor: AppColors.background,
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: ActionButton(
+            width: double.infinity,
+            label: createIssueState.isLoading ? 'Submitting' : 'Submit Issue',
+            onPressed: () {
+              if (_formKey.currentState!.validate()) {
+                createIssueController.submitIssue();
+              }
+            },
+          ),
+        ),
+      ),
       body: Stack(
         children: [
           Form(
@@ -543,22 +567,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
                   const SizedBox(height: 32),
 
-                  // Submit Button
-                  ActionButton(
-                    width: double.infinity,
-                    label: createIssueState.isLoading
-                        ? 'Submitting'
-                        : 'Submit Issue',
-
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) {
-                        createIssueController.submitIssue();
-                      }
-                    },
-                    isLoading: createIssueState.isLoading,
-                  ),
-
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 100),
                 ],
               ),
             ),

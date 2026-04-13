@@ -23,6 +23,7 @@ class CitizenDashboardView extends ConsumerWidget {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
+          centerTitle: true,
           title: const Text('Dashboard'),
           backgroundColor: AppColors.primaryBlue900,
           foregroundColor: Colors.white,
@@ -34,13 +35,22 @@ class CitizenDashboardView extends ConsumerWidget {
             children: [
               const Icon(Icons.wifi_off_rounded, size: 80, color: Colors.grey),
               const SizedBox(height: 16),
-              const Text('Connection Failed',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primaryBlue900)),
+              const Text(
+                'Connection Failed',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryBlue900,
+                ),
+              ),
               const SizedBox(height: 8),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 32.0),
-                child: Text('Could not connect to the server. Please check your internet connection or ensure the backend is running.',
-                    textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  'Could not connect to the server. Please check your internet connection or ensure the backend is running.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
@@ -52,9 +62,12 @@ class CitizenDashboardView extends ConsumerWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryBlue900,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                 ),
-              )
+              ),
             ],
           ),
         ),

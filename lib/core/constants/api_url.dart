@@ -29,7 +29,9 @@ class ApiUrl {
   static const String issueTypes = '$baseUrl/issues/get-issue-types';
   static const String createIssue = '$baseUrl/issues/create';
   static const String citizenIssues = '$baseUrl/issues/my-issues';
-  static const String updateStatus = '$baseUrl/issues/update-status';
+  static const String updateStatus = '$baseUrl/issues/resolve';
+  static const String reportIssue = '$baseUrl/issues/report-false';
+  // required issue_label, reason
 
   // Route endpoints
   static const String shortestRoute = '$baseUrl/routes/shortest';
