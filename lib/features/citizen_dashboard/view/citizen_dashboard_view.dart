@@ -1,4 +1,5 @@
 import 'package:batti_nala/core/constants/colors.dart';
+import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
 import 'package:batti_nala/features/citizen_dashboard/controllers/citizen_dashboard_notifier.dart';
 import 'package:batti_nala/features/user-issue/view/widgets/issue_card_widget.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
@@ -13,6 +14,7 @@ class CitizenDashboardView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reports = ref.watch(dashboardProvider);
+    final authState = ref.watch(authNotifierProvider.notifier);
     final dashboardController = ref.read(dashboardProvider.notifier);
 
     final profileState = ref.watch(profileNotifierProvider);
@@ -23,6 +25,11 @@ class CitizenDashboardView extends ConsumerWidget {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.logout_outlined, color: Colors.white),
+            onPressed: () =>
+                authState.logout(), // Call logout method from auth state
+          ),
           centerTitle: true,
           title: const Text('Dashboard'),
           backgroundColor: AppColors.primaryBlue900,
