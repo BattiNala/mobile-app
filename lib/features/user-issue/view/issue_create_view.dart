@@ -59,15 +59,27 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
         if (result.issueType != 'none') {
           _showDetectionSummary(result);
         } else {
-          final englishMessage = result.description.isNotEmpty
-              ? result.description
-              : 'Could not detect sewage, electrical or road infrastructure.';
-          const nepaliMessage =
-              'पूर्वाधार सम्बन्धी समस्या भेटिएन। कृपया स्पष्ट फोटो अपलोड गर्नुहोस्।';
+          // Handle different error types
+          String title, englishMessage, nepaliMessage;
+
+          if (result.errorType == 'SERVER_UNAVAILABLE') {
+            title = 'Server Busy';
+            englishMessage =
+                'AI service is currently experiencing high demand. Please try again in a few moments. You can still select issue type and priority manually.';
+            nepaliMessage =
+                'AI सेवा हाल व्यस्त छ। कृपया केही समयपछि फेरि प्रयास गर्नुहोस्। तपाईं issue type र priority आफैं छान्न सक्नुहुन्छ।';
+          } else {
+            title = 'Invalid Image';
+            englishMessage = result.description.isNotEmpty
+                ? result.description
+                : 'Could not detect sewage, electrical or road infrastructure.';
+            nepaliMessage =
+                'पूर्वाधार सम्बन्धी समस्या भेटिएन। कृपया स्पष्ट फोटो अपलोड गर्नुहोस्।';
+          }
 
           SnackbarService.showErrorDialog(
             context,
-            title: 'Invalid Image',
+            title: title,
             englishMessage: englishMessage,
             nepaliMessage: nepaliMessage,
             buttonText: 'OK',
@@ -76,17 +88,16 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
         }
       }
     } catch (e) {
-      debugPrint('AI Analysis Error: $e');
+      debugPrint('AI Analysis Error (unexpected): $e');
       if (mounted) {
         _analysisInFlight = (_analysisInFlight - 1).clamp(0, 999999);
         setState(() => _isAnalyzing = _analysisInFlight > 0);
+
         SnackbarService.showErrorDialog(
           context,
-          title: 'Scan Failed',
-          englishMessage:
-              'Image scan failed. You can still select issue type and priority manually.',
-          nepaliMessage:
-              'तस्बिर जाँच सफल भएन। कृपया issue type र priority आफैं छान्नुहोस्।',
+          title: 'Unexpected Error',
+          englishMessage: 'An unexpected error occurred during image analysis.',
+          nepaliMessage: 'तस्बिर विश्लेषण मा अप्रत्याशित त्रुटि भयो।',
           buttonText: 'Understood',
         );
       }
@@ -169,10 +180,9 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
 
     // Update description if it's empty or add keywords
     String newDesc = _descriptionController.text;
-    final detectedTypeLabel = result.issueType;
 
     if (newDesc.isEmpty) {
-      newDesc = 'Detected $detectedTypeLabel: ${result.description}';
+      newDesc = result.description;
     } else {
       newDesc += '\n[AI detected: ${result.description}]';
     }

@@ -9,12 +9,15 @@ class GeminiAnalyzerResult {
   final String priority;
   final double confidence;
   final String description;
+  final String?
+  errorType; // 'SERVER_UNAVAILABLE', 'INVALID_IMAGE', or null if no error
 
   const GeminiAnalyzerResult({
     required this.issueType,
     required this.priority,
     required this.confidence,
     required this.description,
+    this.errorType,
   });
 
   factory GeminiAnalyzerResult.fromJson(Map<String, dynamic> json) {
@@ -25,16 +28,29 @@ class GeminiAnalyzerResult {
           ? (json['confidence'] as num).toDouble()
           : double.tryParse(json['confidence'].toString()) ?? 0.0,
       description: json['description']?.toString() ?? '',
+      errorType: null,
     );
   }
 
-  // Fallback result for errors
+  // Fallback result for generic errors
   factory GeminiAnalyzerResult.error() {
     return const GeminiAnalyzerResult(
       issueType: 'none',
       priority: 'LOW',
       confidence: 0.0,
       description: 'Could not analyze image',
+      errorType: 'INVALID_IMAGE',
+    );
+  }
+
+  // Server unavailable (503) error
+  factory GeminiAnalyzerResult.serverUnavailable() {
+    return const GeminiAnalyzerResult(
+      issueType: 'none',
+      priority: 'LOW',
+      confidence: 0.0,
+      description: 'Server is currently busy',
+      errorType: 'SERVER_UNAVAILABLE',
     );
   }
 }
@@ -106,6 +122,13 @@ class GeminiAnalyzer {
     } catch (e) {
       debugPrint('Gemini Analysis Failed');
       debugPrint('Error: $e');
+
+      // Check if it's a server unavailable error (503)
+      if (e.toString().contains('503') ||
+          e.toString().contains('UNAVAILABLE')) {
+        return GeminiAnalyzerResult.serverUnavailable();
+      }
+
       return GeminiAnalyzerResult.error();
     }
   }

@@ -5,6 +5,7 @@ import 'package:batti_nala/features/user-issue/view/widgets/issue_location_card.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
 class IssueDetailView extends ConsumerWidget {
@@ -15,6 +16,7 @@ class IssueDetailView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(issueDetailProvider(issueLabel));
+    final notifier = ref.read(issueDetailProvider(issueLabel).notifier);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -24,197 +26,204 @@ class IssueDetailView extends ConsumerWidget {
           ? Center(child: Text(state.errorMessage!))
           : state.issue == null
           ? const Center(child: Text('Issue not found'))
-          : _buildContent(context, state.issue!),
-    );
-  }
-
-  Widget _buildContent(BuildContext context, var issue) {
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        /// MODERN BRANDED HEADER
-        SliverAppBar(
-          expandedHeight: 170.0,
-          floating: false,
-          pinned: true,
-          backgroundColor: AppColors.primaryBlue900,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          flexibleSpace: FlexibleSpaceBar(
-            background: Container(
-              decoration: const BoxDecoration(color: AppColors.primaryBlue900),
-              child: Stack(
-                children: [
-                  // // Decorative Circles for Brand Vibe
-                  Positioned(
-                    right: -50,
-                    top: -20,
-                    child: CircleAvatar(
-                      radius: 100,
-                      backgroundColor: Colors.white.withValues(alpha: 0.05),
-                    ),
-                  ),
-                  Positioned(
-                    left: 20,
-                    bottom: 40,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                          child: Text(
-                            issue.issueLabel,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          issue.issueType.toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+          : RefreshIndicator(
+              onRefresh: () async {
+                await notifier.fetchIssueDetail(issueLabel);
+              },
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  _buildHeaderSliver(context, issueLabel, state.issue!),
+                  _buildContentSliver(context, state.issue!),
                 ],
               ),
             ),
-          ),
+    );
+  }
+
+  SliverAppBar _buildHeaderSliver(
+    BuildContext context,
+    String issueLabel,
+    var issue,
+  ) {
+    return SliverAppBar(
+      expandedHeight: 170.0,
+      floating: false,
+      pinned: true,
+      backgroundColor: AppColors.primaryBlue900,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(
+          Icons.arrow_back_ios_new_rounded,
+          color: Colors.white,
+          size: 20,
         ),
-
-        SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        onPressed: () => context.pop(),
+      ),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(color: AppColors.primaryBlue900),
+          child: Stack(
             children: [
-              // Visual Status Bar
-              _buildStatusBar(issue.status),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 20,
+              Positioned(
+                right: -50,
+                top: -20,
+                child: CircleAvatar(
+                  radius: 100,
+                  backgroundColor: Colors.white.withValues(alpha: 0.05),
                 ),
+              ),
+              Positioned(
+                left: 20,
+                bottom: 40,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    // Priority Row
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.flag_rounded,
-                          color: _getPriorityColor(issue.issuePriority),
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${issue.issuePriority} Priority'.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1,
-                            color: _getPriorityColor(issue.issuePriority),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // Description Section
-                    const _SectionHeading(title: 'What Happened?'),
-                    const SizedBox(height: 12),
-                    Text(
-                      issue.description,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textMain.withValues(alpha: 0.9),
-                        height: 1.6,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // Location integrated snippet
-                    const _SectionHeading(title: 'Where?'),
-                    const SizedBox(height: 16),
-                    IssueLocationCard(
-                      location: issue.issueLocation,
-                      latitude: issue.latitude,
-                      longitude: issue.longitude,
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // Attachments Grid
-                    if (issue.attachments.isNotEmpty) ...[
-                      const _SectionHeading(title: 'Evidence & Photos'),
-                      const SizedBox(height: 16),
-                      _buildImageGallery(issue.attachments),
-                      const SizedBox(height: 40),
-                    ],
-
-                    // Footer with meta-info
                     Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.background,
-                        borderRadius: BorderRadius.circular(20),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
-                      child: Column(
-                        children: [
-                          _buildMetaRow(
-                            Icons.history_toggle_off_rounded,
-                            'Submitted on',
-                            _formatDay(issue.createdAt),
-                          ),
-                          if (issue.assignedTo != null) ...[
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              child: Divider(height: 1, color: Colors.white),
-                            ),
-                            _buildMetaRow(
-                              Icons.person_pin_rounded,
-                              issue.status.toUpperCase() == 'RESOLVED'
-                                  ? 'Resolved by'
-                                  : 'Handling by',
-                              issue.assignedTo!,
-                            ),
-                          ],
-                        ],
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: Text(
+                        issue.issueLabel,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.2,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 60),
+                    const SizedBox(height: 8),
+                    Text(
+                      issue.issueType.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
         ),
-      ],
+      ),
+    );
+  }
+
+  SliverToBoxAdapter _buildContentSliver(BuildContext context, var issue) {
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Visual Status Bar
+          _buildStatusBar(issue.status),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Priority Row
+                Row(
+                  children: [
+                    Icon(
+                      Icons.flag_rounded,
+                      color: _getPriorityColor(issue.issuePriority),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${issue.issuePriority} Priority'.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                        color: _getPriorityColor(issue.issuePriority),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 32),
+
+                // Description Section
+                const _SectionHeading(title: 'What Happened?'),
+                const SizedBox(height: 12),
+                Text(
+                  issue.description,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppColors.textMain.withValues(alpha: 0.9),
+                    height: 1.6,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+
+                // Location integrated snippet
+                const _SectionHeading(title: 'Where?'),
+                const SizedBox(height: 16),
+                IssueLocationCard(
+                  location: issue.issueLocation,
+                  latitude: issue.latitude,
+                  longitude: issue.longitude,
+                ),
+
+                const SizedBox(height: 40),
+
+                // Attachments Grid
+                if (issue.attachments.isNotEmpty) ...[
+                  const _SectionHeading(title: 'Evidence & Photos'),
+                  const SizedBox(height: 16),
+                  _buildImageGallery(issue.attachments),
+                  const SizedBox(height: 40),
+                ],
+
+                // Footer with meta-info
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildMetaRow(
+                        Icons.history_toggle_off_rounded,
+                        'Submitted on',
+                        _formatDay(issue.createdAt),
+                      ),
+                      if (issue.assignedTo != null) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Divider(height: 1, color: Colors.white),
+                        ),
+                        _buildMetaRow(
+                          Icons.person_pin_rounded,
+                          issue.status.toUpperCase() == 'RESOLVED'
+                              ? 'Resolved by'
+                              : 'Handling by',
+                          issue.assignedTo!,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 60),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
