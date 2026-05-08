@@ -315,30 +315,34 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
         elevation: 0,
       ),
       backgroundColor: AppColors.background,
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
+      bottomNavigationBar: _isAnalyzing
+          ? null
+          : Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: ActionButton(
+                  width: double.infinity,
+                  label: createIssueState.isLoading
+                      ? 'Submitting'
+                      : 'Submit Issue',
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      createIssueController.submitIssue();
+                    }
+                  },
+                ),
+              ),
             ),
-          ],
-        ),
-        child: SafeArea(
-          child: ActionButton(
-            width: double.infinity,
-            label: createIssueState.isLoading ? 'Submitting' : 'Submit Issue',
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                createIssueController.submitIssue();
-              }
-            },
-          ),
-        ),
-      ),
       body: Stack(
         children: [
           Form(
