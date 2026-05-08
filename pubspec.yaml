@@ -16,7 +16,6 @@ dependencies:
   flutter_riverpod: ^2.5.1
   flutter_secure_storage: ^10.0.0
   font_awesome_flutter: ^10.12.0
-  geocoding: ^3.0.0
   geolocator: ^14.0.2
   go_router: ^17.1.0
   google_generative_ai: ^0.4.4
@@ -25,6 +24,7 @@ dependencies:
   latlong2: ^0.9.0
   path: ^1.9.1
   path_provider: ^2.1.5
+  shared_preferences: ^2.5.5
   shimmer: ^3.0.0
 
 flutter_native_splash:

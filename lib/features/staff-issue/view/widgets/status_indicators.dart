@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:batti_nala/core/constants/colors.dart';
 
+/// Badge widget for displaying issue status with visual indicators
 class StatusBadge extends StatelessWidget {
   final String status;
 
@@ -74,4 +76,34 @@ class StatusBadge extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Row widget displaying issue priority level with visual indicators
+class IssuePriorityRow extends StatelessWidget {
+  final String priority;
+
+  const IssuePriorityRow({super.key, required this.priority});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _getPriorityColor(priority);
+    return Row(
+      children: [
+        Icon(Icons.flag_rounded, color: color, size: 18),
+        const SizedBox(width: 8),
+        Text(
+          '${priority.toUpperCase()} Priority',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getPriorityColor(String p) =>
+      p.toUpperCase() == 'HIGH' ? AppColors.adminRed : AppColors.primaryBlue;
 }

@@ -1,15 +1,14 @@
 import 'dart:io';
 import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:batti_nala/core/constants/colors.dart';
-import 'package:batti_nala/core/widgets/action_button.dart';
-import 'package:batti_nala/core/widgets/loading_indicator.dart';
+import 'package:batti_nala/features/shared/widgets/action_button.dart';
+import 'package:batti_nala/features/shared/widgets/loading_indicator.dart';
 import 'package:batti_nala/features/user-issue/controllers/create_issue_state.dart';
 import 'package:batti_nala/features/shared-issue/models/issue_type_model.dart';
 import 'package:batti_nala/features/shared-issue/repository/issue_repository.dart';
 import 'package:batti_nala/features/user-issue/view/widgets/image_picker_grid.dart';
-import 'package:batti_nala/features/user-issue/view/widgets/issue_type_selector.dart';
-import 'package:batti_nala/features/user-issue/view/widgets/location_picker.dart';
-import 'package:batti_nala/features/user-issue/view/widgets/priority_selector.dart';
+import 'package:batti_nala/features/user-issue/view/widgets/issue_selectors.dart';
+import 'package:batti_nala/features/user-issue/view/widgets/location_pickers.dart';
 import 'package:batti_nala/core/services/gemini_analyzer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -576,8 +575,6 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
                     ),
 
                   const SizedBox(height: 32),
-
-                  const SizedBox(height: 100),
                 ],
               ),
             ),

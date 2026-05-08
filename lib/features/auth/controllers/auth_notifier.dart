@@ -1,11 +1,11 @@
 import 'package:batti_nala/core/error/error_response.dart';
-import 'package:batti_nala/core/models/user_model.dart';
+import 'package:batti_nala/features/shared/models/user_model.dart';
 import 'package:batti_nala/core/services/storage_services.dart';
 import 'package:batti_nala/features/auth/controllers/auth_state.dart';
 import 'package:batti_nala/features/auth/repositories/auth_repository.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
 import 'package:batti_nala/features/citizen_dashboard/controllers/citizen_dashboard_notifier.dart';
-import 'package:batti_nala/features/staff-issue/controllers/employee_dashboard_notifier.dart';
+import 'package:batti_nala/features/staff_dashboard/controller/employee_dashboard_notifier.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
@@ -61,7 +61,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isLoading: false, clearErrorMessage: true);
       if (!mounted) return;
       state = state.copyWith(errorMessage: e.detail);
-      rethrow;
     } catch (e) {
       if (!mounted) return;
       state = state.copyWith(isLoading: false, clearErrorMessage: true);
@@ -120,13 +119,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isLoading: false, clearErrorMessage: true);
       if (!mounted) return;
       state = state.copyWith(errorMessage: e.detail);
-      rethrow;
     } catch (e) {
       if (!mounted) return;
       state = state.copyWith(isLoading: false, clearErrorMessage: true);
       if (!mounted) return;
-      state = state.copyWith(errorMessage: 'An unexpected error occurred: $e');
-      rethrow;
+      state = state.copyWith(errorMessage: 'An unexpected error occurred');
     }
   }
 

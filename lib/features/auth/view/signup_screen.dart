@@ -1,9 +1,9 @@
 import 'package:batti_nala/core/utils/validators.dart';
-import 'package:batti_nala/core/widgets/action_button.dart';
+import 'package:batti_nala/features/shared/widgets/action_button.dart';
 import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
-import 'package:batti_nala/core/models/user_model.dart';
+import 'package:batti_nala/features/shared/models/user_model.dart';
 import 'package:batti_nala/features/auth/view/auth_header_widget.dart';
 import 'package:batti_nala/features/auth/view/input_label_widget.dart';
 import 'package:flutter/material.dart';

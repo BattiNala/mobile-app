@@ -1,15 +1,15 @@
+import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:batti_nala/core/constants/colors.dart';
-import 'package:batti_nala/core/widgets/loading_indicator.dart';
+import 'package:batti_nala/features/shared/widgets/loading_indicator.dart';
 import 'package:batti_nala/features/staff-issue/controllers/employee_issue_detail_notifier.dart';
+import 'package:batti_nala/features/shared/widgets/issue_location_card.dart';
 import 'package:batti_nala/features/staff-issue/view/widgets/issue_detail_header.dart';
-import 'package:batti_nala/features/staff-issue/view/widgets/issue_status_bar.dart';
-import 'package:batti_nala/features/staff-issue/view/widgets/issue_priority_row.dart';
-import 'package:batti_nala/features/staff-issue/view/widgets/issue_location_card.dart';
+import 'package:batti_nala/features/staff-issue/view/widgets/issue_status_widgets.dart';
+import 'package:batti_nala/features/staff-issue/view/widgets/status_indicators.dart';
 import 'package:batti_nala/features/staff-issue/view/widgets/issue_image_gallery.dart';
 import 'package:batti_nala/features/staff-issue/view/widgets/issue_meta_info_card.dart';
-import 'package:batti_nala/features/staff-issue/view/widgets/issue_status_action_bar.dart';
 import 'package:batti_nala/features/staff-issue/view/widgets/section_heading.dart';
 import 'package:go_router/go_router.dart';
 
@@ -40,74 +40,80 @@ class EmployeeIssueDetailView extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, var issue, WidgetRef ref) {
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        IssueDetailHeader(
-          issueLabel: issue.issueLabel,
-          issueType: issue.issueType,
-          rejectedReason: issue.rejectedReason,
-          onReportFalse: () => _showReportFalseDialog(context, ref),
-        ),
-        SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              IssueStatusBar(
-                status: issue.status,
-                rejectedReason: issue.rejectedReason,
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 20,
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref
+            .read(employeeIssueDetailProvider(issueLabel).notifier)
+            .fetchIssueDetail();
+      },
+      child: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          IssueDetailHeader(
+            issueLabel: issue.issueLabel,
+            issueType: issue.issueType,
+            rejectedReason: issue.rejectedReason,
+            onReportFalse: () => _showReportFalseDialog(context, ref),
+          ),
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                IssueStatusBar(
+                  status: issue.status,
+                  rejectedReason: issue.rejectedReason,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    IssuePriorityRow(priority: issue.issuePriority),
-                    const SizedBox(height: 32),
-                    const SectionHeading(title: 'Problem Description'),
-                    const SizedBox(height: 12),
-                    Text(
-                      issue.description,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppColors.textMain.withValues(alpha: 0.9),
-                        height: 1.6,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    const SectionHeading(title: 'Mission Location'),
-                    const SizedBox(height: 16),
-                    IssueLocationCard(
-                      location: issue.issueLocation,
-                      latitude: issue.latitude,
-                      longitude: issue.longitude,
-                      onTap: () => context.push('/mission-map', extra: issue),
-                    ),
-                    const SizedBox(height: 40),
-                    if (issue.attachments.isNotEmpty) ...[
-                      const SectionHeading(title: 'Visual Evidence'),
-                      const SizedBox(height: 16),
-                      IssueImageGallery(
-                        urls: List<String>.from(issue.attachments),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      IssuePriorityRow(priority: issue.issuePriority),
+                      const SizedBox(height: 32),
+                      const SectionHeading(title: 'Problem Description'),
+                      const SizedBox(height: 12),
+                      Text(
+                        issue.description,
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppColors.textMain.withValues(alpha: 0.9),
+                          height: 1.6,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       const SizedBox(height: 40),
+                      const SectionHeading(title: 'Mission Location'),
+                      const SizedBox(height: 16),
+                      IssueLocationCard(
+                        location: issue.issueLocation,
+                        latitude: issue.latitude,
+                        longitude: issue.longitude,
+                        onTap: () => context.push('/mission-map', extra: issue),
+                      ),
+                      const SizedBox(height: 40),
+                      if (issue.attachments.isNotEmpty) ...[
+                        const SectionHeading(title: 'Visual Evidence'),
+                        const SizedBox(height: 16),
+                        IssueImageGallery(
+                          urls: List<String>.from(issue.attachments),
+                        ),
+                        const SizedBox(height: 40),
+                      ],
+                      IssueMetaInfoCard(
+                        createdAt: issue.createdAt,
+                        assignedTo: issue.assignedTo,
+                      ),
                     ],
-                    IssueMetaInfoCard(
-                      createdAt: issue.createdAt,
-                      assignedTo: issue.assignedTo,
-                    ),
-                    const SizedBox(height: 100),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -166,19 +172,18 @@ class EmployeeIssueDetailView extends ConsumerWidget {
                 reasonController.text.trim(),
               );
               if (context.mounted) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success
-                          ? 'Issue reported as false successfully'
-                          : 'Failed to report issue',
-                    ),
-                    backgroundColor: success
-                        ? Colors.green
-                        : AppColors.adminRed,
-                  ),
-                );
+                context.pushNamed('employee-dashboard');
+                if (success) {
+                  SnackbarService.showSuccess(
+                    context,
+                    'Issue reported as false successfully',
+                  );
+                } else {
+                  SnackbarService.showError(
+                    context,
+                    'Failed to report issue as false',
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(

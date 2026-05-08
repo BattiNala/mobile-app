@@ -1,7 +1,7 @@
 import 'package:batti_nala/core/constants/colors.dart';
-import 'package:batti_nala/core/widgets/loading_indicator.dart';
+import 'package:batti_nala/features/shared/widgets/loading_indicator.dart';
 import 'package:batti_nala/features/user-issue/controllers/issue_detail_notifier.dart';
-import 'package:batti_nala/features/user-issue/view/widgets/issue_location_card.dart';
+import 'package:batti_nala/features/shared/widgets/issue_location_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';

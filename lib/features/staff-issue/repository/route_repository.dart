@@ -2,7 +2,7 @@ import 'package:batti_nala/core/constants/api_url.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:batti_nala/core/networks/dio_client.dart';
-import 'package:batti_nala/features/staff_dashboard/model/route_model.dart';
+import 'package:batti_nala/features/staff-issue/model/route_model.dart';
 
 final routeRepositoryProvider = Provider<RouteRepository>((ref) {
   final dioClient = ref.read(dioProvider);
