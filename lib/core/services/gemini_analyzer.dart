@@ -100,8 +100,6 @@ class GeminiAnalyzer {
         return GeminiAnalyzerResult.error();
       }
 
-      debugPrint('Raw Gemini Response: ${response.text}');
-
       String jsonString = response.text!.trim();
       if (jsonString.startsWith('```')) {
         jsonString = jsonString
