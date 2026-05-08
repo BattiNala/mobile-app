@@ -13,7 +13,7 @@ import 'package:batti_nala/features/staff_dashboard/view/dashboard_screen.dart';
 import 'package:batti_nala/features/auth/view/password_reset_screen.dart';
 import 'package:batti_nala/features/user-issue/view/issue_detail_view.dart';
 import 'package:batti_nala/features/staff-issue/view/employee_issue_detail_view.dart';
-import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
+import 'package:batti_nala/features/shared/issue/models/issue_model.dart';
 import 'package:batti_nala/features/staff-issue/view/mission_map_view.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {

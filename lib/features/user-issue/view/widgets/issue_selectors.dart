@@ -1,4 +1,4 @@
-import 'package:batti_nala/features/shared-issue/models/issue_type_model.dart';
+import 'package:batti_nala/features/shared/issue/models/issue_type_model.dart';
 import 'package:flutter/material.dart';
 
 /// Widget for selecting issue types using FilterChips

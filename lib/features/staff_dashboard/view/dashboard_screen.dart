@@ -1,6 +1,6 @@
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/staff_dashboard/controller/employee_dashboard_notifier.dart';
-import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
+import 'package:batti_nala/features/shared/issue/models/issue_model.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
 import 'package:batti_nala/features/user-issue/view/widgets/issue_card_widget.dart';
 import 'package:flutter/material.dart';

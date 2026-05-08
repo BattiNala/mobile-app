@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:batti_nala/features/user-issue/controllers/create_issue_state.dart';
-import 'package:batti_nala/features/shared-issue/repository/issue_repository.dart';
+import 'package:batti_nala/features/shared/issue/repository/issue_repository.dart';
 import 'package:batti_nala/features/user-issue/models/create_issue_request.dart';
-import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
-import 'package:batti_nala/features/shared-issue/models/issue_type_model.dart';
+import 'package:batti_nala/features/shared/issue/models/issue_model.dart';
+import 'package:batti_nala/features/shared/issue/models/issue_type_model.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -149,9 +149,11 @@ class CreateIssueController extends StateNotifier<CreateIssueState> {
         final decoded = jsonDecode(trimmed);
         if (decoded is Map) {
           final detail = decoded['detail'];
-          if (detail is String && detail.trim().isNotEmpty) return detail.trim();
+          if (detail is String && detail.trim().isNotEmpty)
+            return detail.trim();
           final message = decoded['message'];
-          if (message is String && message.trim().isNotEmpty) return message.trim();
+          if (message is String && message.trim().isNotEmpty)
+            return message.trim();
         }
       } catch (_) {}
       return trimmed;

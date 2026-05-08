@@ -1,5 +1,5 @@
-import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
-import 'package:batti_nala/features/shared-issue/repository/issue_repository.dart';
+import 'package:batti_nala/features/shared/issue/models/issue_model.dart';
+import 'package:batti_nala/features/shared/issue/repository/issue_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class IssueDetailState {
@@ -7,11 +7,7 @@ class IssueDetailState {
   final bool isLoading;
   final String? errorMessage;
 
-  IssueDetailState({
-    this.issue,
-    this.isLoading = false,
-    this.errorMessage,
-  });
+  IssueDetailState({this.issue, this.isLoading = false, this.errorMessage});
 
   IssueDetailState copyWith({
     IssueModel? issue,
@@ -31,7 +27,7 @@ class IssueDetailNotifier extends StateNotifier<IssueDetailState> {
   final IssueRepository _repository;
 
   IssueDetailNotifier(this._repository)
-      : super(IssueDetailState(isLoading: true));
+    : super(IssueDetailState(isLoading: true));
 
   Future<void> fetchIssueDetail(String label) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
@@ -51,10 +47,10 @@ class IssueDetailNotifier extends StateNotifier<IssueDetailState> {
 
 final issueDetailProvider =
     StateNotifierProvider.family<IssueDetailNotifier, IssueDetailState, String>(
-  (ref, label) {
-    final repository = ref.read(issueRepositoryProvider);
-    final notifier = IssueDetailNotifier(repository);
-    notifier.fetchIssueDetail(label);
-    return notifier;
-  },
-);
+      (ref, label) {
+        final repository = ref.read(issueRepositoryProvider);
+        final notifier = IssueDetailNotifier(repository);
+        notifier.fetchIssueDetail(label);
+        return notifier;
+      },
+    );
