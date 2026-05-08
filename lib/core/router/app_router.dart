@@ -1,4 +1,5 @@
 import 'package:batti_nala/features/auth/view/verify_otp_screen.dart';
+import 'package:batti_nala/features/onboarding/onboarding_notifier.dart';
 import 'package:batti_nala/features/user-issue/view/issue_create_view.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,13 +14,14 @@ import 'package:batti_nala/features/auth/view/password_reset_screen.dart';
 import 'package:batti_nala/features/user-issue/view/issue_detail_view.dart';
 import 'package:batti_nala/features/staff-issue/view/employee_issue_detail_view.dart';
 import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
-import 'package:batti_nala/features/staff_dashboard/view/mission_map_view.dart';
+import 'package:batti_nala/features/staff-issue/view/mission_map_view.dart';
 
 final goRouterProvider = Provider<GoRouter>((ref) {
   final user = ref.watch(authNotifierProvider.select((state) => state.user));
+  final hasSeenOnboarding = ref.watch(onboardingProvider);
 
   return GoRouter(
-    initialLocation: '/onboarding',
+    initialLocation: '/',
     routes: [
       GoRoute(
         path: '/onboarding',
@@ -85,22 +87,26 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           state.matchedLocation == '/password-reset';
       final isOnVerifyScreen = state.matchedLocation == '/verify-otp';
 
-      // 1. If not logged in
-      if (user == null) {
-        // Only allow auth routes and onboarding
-        final isAllowed = isAuthRoute || isOnOnboarding;
-        return isAllowed ? null : '/login';
+      // 1. If user has NOT seen onboarding, only allow onboarding route
+      if (!hasSeenOnboarding) {
+        return isOnOnboarding ? null : '/onboarding';
       }
 
-      // 2. If logged in but NOT verified
+      // 2. If onboarding is done but not logged in, only allow auth routes
+      if (user == null) {
+        if (isOnOnboarding) return '/login';
+        return isAuthRoute ? null : '/login';
+      }
+
+      // 3. If logged in but NOT verified only allow the verification screen
       if (!user.isVerified) {
-        // Only allow the verification screen
         return isOnVerifyScreen ? null : '/verify-otp';
       }
 
-      // 3. If logged in AND verified
-      // Don't allow auth screens, onboarding, or verify screen
-      if (isAuthRoute || isOnOnboarding || isOnVerifyScreen) {
+      final isOnRoot = state.matchedLocation == '/';
+
+      // 5. If logged in AND verified but trying to access auth routes or onboarding, redirect to respective dashboards
+      if (isOnRoot || isAuthRoute || isOnOnboarding || isOnVerifyScreen) {
         return user.role == 'citizen'
             ? '/citizen-dashboard'
             : '/staff-dashboard';

@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'package:batti_nala/core/services/snackbar_services.dart';
-import 'package:batti_nala/core/widgets/action_button.dart';
+import 'package:batti_nala/features/shared/widgets/action_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:batti_nala/core/constants/colors.dart';
-import 'package:batti_nala/features/staff_dashboard/model/route_model.dart';
-import 'package:batti_nala/features/staff_dashboard/repository/route_repository.dart';
+import 'package:batti_nala/features/staff-issue/model/route_model.dart';
+import 'package:batti_nala/features/staff-issue/repository/route_repository.dart';
 import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
 
 class MissionMapView extends ConsumerStatefulWidget {
@@ -114,13 +115,15 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
     final newLatLng = LatLng(pos.latitude, pos.longitude);
 
     if (_route != null) {
-      final distanceToPath = const Distance().as(
-        LengthUnit.Meter,
-        newLatLng,
-        _route!.path.first,
-      );
-      // Auto reroute if moved > 50m off
-      if (distanceToPath > 50) {
+      // Find the closest point on the route to the user
+      double minDistance = double.maxFinite;
+      for (var point in _route!.path) {
+        final dist = const Distance().as(LengthUnit.Meter, newLatLng, point);
+        if (dist < minDistance) minDistance = dist;
+      }
+
+      // If the user is > 50m away from ANY point on the road, reroute
+      if (minDistance > 50) {
         _currentLatLng = newLatLng;
         _fetchRoute();
         return;
@@ -133,7 +136,14 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
     });
 
     if (_isAutoFollow) {
-      _mapController.move(newLatLng, _mapController.camera.zoom);
+      // ADD ROTATION based on heading (makes it feel like Google Maps)
+      // heading is 0-360, null if standing still
+      double? heading = pos.heading;
+      _mapController.moveAndRotate(
+        newLatLng,
+        _mapController.camera.zoom,
+        heading,
+      );
     }
   }
 
@@ -141,6 +151,8 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
     if (_route == null || _currentLatLng == null) return;
 
     final target = LatLng(widget.issue.latitude, widget.issue.longitude);
+
+    // Use straight line only for arrival detection (more reliable for "you're here")
     final distToTarget = const Distance().as(
       LengthUnit.Meter,
       _currentLatLng!,
@@ -149,20 +161,59 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
 
     if (distToTarget < 20) {
       _hintText = "You've arrived at the site!";
-      return;
+    } else {
+      // Use the polyline distance for accurate road hint
+      double remainingKm = _calculateRemainingDistance();
+      _hintText = 'Destination is ${remainingKm.toStringAsFixed(1)} km away';
+    }
+  }
+
+  double _calculateRemainingDistance() {
+    if (_route == null || _currentLatLng == null || _route!.path.isEmpty) {
+      return 0.0;
     }
 
-    final offRoadDist = const Distance().as(
+    final path = _route!.path;
+    const distanceCalculator = Distance();
+
+    // 1. Find the closest point on the route to the user's current location
+    int closestIndex = 0;
+    double minDist = double.maxFinite;
+
+    for (int i = 0; i < path.length; i++) {
+      final dist = distanceCalculator.as(
+        LengthUnit.Meter,
+        _currentLatLng!,
+        path[i],
+      );
+      if (dist < minDist) {
+        minDist = dist;
+        closestIndex = i;
+      }
+    }
+
+    // 2. Calculate distance from user to that closest path point
+    double remainingMeters = minDist;
+
+    // 3. Add up the distance from the closest point to the end of the route
+    for (int i = closestIndex; i < path.length - 1; i++) {
+      remainingMeters += distanceCalculator.as(
+        LengthUnit.Meter,
+        path[i],
+        path[i + 1],
+      );
+    }
+
+    // 4. Add the final off-road distance to the exact issue coordinates
+    final target = LatLng(widget.issue.latitude, widget.issue.longitude);
+    remainingMeters += distanceCalculator.as(
       LengthUnit.Meter,
-      _route!.path.last,
+      path.last,
       target,
     );
 
-    if (offRoadDist > 10 && _route!.path.length <= 5) {
-      _hintText = 'Almost there! Follow the off-road path';
-    } else {
-      _hintText = 'Continue toward the mission site';
-    }
+    // Convert meters to kilometers
+    return remainingMeters / 1000.0;
   }
 
   @override
@@ -217,6 +268,7 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
                     ),
                   ],
                 ),
+              // Issue location marker
               MarkerLayer(
                 markers: [
                   Marker(
@@ -226,9 +278,9 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
                     ),
                     width: 60,
                     height: 60,
-                    child: const Icon(
-                      Icons.stars_rounded,
-                      color: AppColors.adminRed,
+                    child: const FaIcon(
+                      FontAwesomeIcons.mapSigns,
+                      color: AppColors.primaryBlue800,
                       size: 45,
                     ),
                   ),
@@ -269,6 +321,11 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
   }
 
   Widget _buildControlBar() {
+    // Calculate remaining distance dynamically when navigating
+    final double displayDistance = _isNavigating && _currentLatLng != null
+        ? _calculateRemainingDistance()
+        : (_route?.distanceKm ?? 0.0);
+
     return Card(
       elevation: 10,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -280,14 +337,12 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Mission Distance',
-                  style: TextStyle(fontSize: 10, color: Colors.grey),
+                Text(
+                  _isNavigating ? 'Remaining' : 'Total Distance',
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
                 ),
                 Text(
-                  _route != null
-                      ? '${_route!.distanceKm.toStringAsFixed(1)} KM'
-                      : '-- KM',
+                  '${displayDistance.toStringAsFixed(1)} KM',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

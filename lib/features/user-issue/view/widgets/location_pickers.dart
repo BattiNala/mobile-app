@@ -1,14 +1,127 @@
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/services/geocoding_service.dart';
-import 'package:batti_nala/core/widgets/action_button.dart';
 import 'package:batti_nala/core/services/location_service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:batti_nala/features/shared/widgets/action_button.dart';
+import 'package:batti_nala/features/user-issue/controllers/location_notifier.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 
+/// Main location selection interface with buttons for current location or map picker
+class LocationPicker extends ConsumerWidget {
+  const LocationPicker({super.key});
+
+  Future<void> _openMapPicker(BuildContext context, WidgetRef ref) async {
+    final locationState = ref.read(locationNotifierProvider);
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapPicker(
+          initialLat: locationState.latitude == 0
+              ? null
+              : locationState.latitude,
+          initialLng: locationState.longitude == 0
+              ? null
+              : locationState.longitude,
+          onLocationSelected: (lat, lng, address) {
+            ref
+                .read(locationNotifierProvider.notifier)
+                .setMapLocation(
+                  address: address,
+                  latitude: lat,
+                  longitude: lng,
+                );
+          },
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locationState = ref.watch(locationNotifierProvider);
+    final locationNotifier = ref.read(locationNotifierProvider.notifier);
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: ActionButton(
+                label: locationState.isLoading
+                    ? 'Getting location...'
+                    : 'Current',
+                iconPath: Icons.my_location,
+                backgroundColor: Colors.blue,
+                textColor: Colors.white,
+                onPressed: locationState.isLoading
+                    ? null
+                    : () {
+                        HapticFeedback.lightImpact();
+                        locationNotifier.fetchCurrentLocation();
+                      },
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ActionButton(
+                label: 'Pick on Map',
+                iconPath: Icons.location_on_outlined,
+                onPressed: locationState.isLoading
+                    ? null
+                    : () => _openMapPicker(context, ref),
+                backgroundColor: AppColors.primaryBlue,
+                textColor: AppColors.adminRedLight,
+              ),
+            ),
+          ],
+        ),
+        if (locationState.errorMessage != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Column(
+              children: [
+                Text(
+                  locationState.errorMessage!,
+                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
+                if (locationState.isPermissionPermanentlyDenied) ...[
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: () => locationNotifier.openSettings(),
+                    icon: const Icon(Icons.settings, size: 18),
+                    label: const Text(
+                      'Open App Settings',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryBlue,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: const BorderSide(color: AppColors.primaryBlue),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Interactive map picker widget for selecting location on map
 class MapPicker extends ConsumerStatefulWidget {
   final Function(double lat, double lng, String address) onLocationSelected;
   final double? initialLat;
@@ -311,7 +424,7 @@ class _MapPickerState extends ConsumerState<MapPicker> {
               onTap: _onMapTap,
               onPositionChanged: _onMapPositionChanged,
               interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.all, // Enables pinch, double tap, pan
+                flags: InteractiveFlag.all,
               ),
             ),
             children: [
@@ -374,7 +487,7 @@ class _MapPickerState extends ConsumerState<MapPicker> {
             ],
           ),
 
-          // Zoom Controls (Floating buttons)
+          // Zoom Controls
           Positioned(
             right: 16,
             top: MediaQuery.of(context).size.height / 2 - 60,

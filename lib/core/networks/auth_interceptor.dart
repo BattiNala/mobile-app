@@ -1,11 +1,15 @@
 import 'package:batti_nala/core/constants/api_url.dart';
 import 'package:batti_nala/core/services/storage_services.dart';
+import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AuthInterceptor extends Interceptor {
   final StorageServices _storage;
-  AuthInterceptor(this._storage);
+  final Ref _ref;
+  final Dio _dio;
+  AuthInterceptor(this._storage, this._dio, this._ref);
 
   bool _isRefreshing = false;
   final List<_PendingRequest> _pendingRequests = [];
@@ -22,6 +26,7 @@ class AuthInterceptor extends Interceptor {
       '/auth/signup',
       '/auth/register',
       '/auth/password-reset',
+      '/auth/refresh',
     ];
 
     if (publicAuthEndpoints.any((path) => options.path.contains(path))) {
@@ -55,6 +60,7 @@ class AuthInterceptor extends Interceptor {
     _storage.getRefreshToken().then((refreshToken) async {
       if (refreshToken == null) {
         await _storage.clearAll();
+        _ref.read(authNotifierProvider.notifier).logout();
         return handler.next(err);
       }
 
@@ -66,24 +72,24 @@ class AuthInterceptor extends Interceptor {
       _isRefreshing = true;
 
       try {
-        final response = await Dio().post(
+        final response = await _dio.post(
           ApiUrl.getRefreshToken,
           data: {'refresh_token': refreshToken},
         );
 
         if (response.statusCode == 200) {
-          final newToken = response.data['access_token'];
+          final newAccessToken = response.data['access_token'];
           final newRefreshToken = response.data['refresh_token'];
 
-          await _storage.saveAccessToken(newToken);
+          await _storage.saveAccessToken(newAccessToken);
           await _storage.saveRefreshToken(newRefreshToken);
 
           // Retry current request
-          _retryRequest(err.requestOptions, newToken, handler);
+          _retryRequest(err.requestOptions, newAccessToken, handler);
 
           // Retry pending requests
           for (var pending in _pendingRequests) {
-            _retryRequest(pending.options, newToken, pending.handler);
+            _retryRequest(pending.options, newAccessToken, pending.handler);
           }
           _pendingRequests.clear();
         } else {
@@ -104,18 +110,11 @@ class AuthInterceptor extends Interceptor {
     String token,
     ErrorInterceptorHandler handler,
   ) {
-    final newOptions = Options(
-      method: options.method,
-      headers: {...options.headers, 'Authorization': 'Bearer $token'},
-    );
+    //  update the header on the original options
+    options.headers['Authorization'] = 'Bearer $token';
 
-    Dio()
-        .request(
-          options.path,
-          data: options.data,
-          queryParameters: options.queryParameters,
-          options: newOptions,
-        )
+    _dio
+        .fetch(options)
         .then((response) {
           handler.resolve(response);
         })

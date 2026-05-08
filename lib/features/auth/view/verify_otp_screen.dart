@@ -1,6 +1,6 @@
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/services/snackbar_services.dart';
-import 'package:batti_nala/core/widgets/action_button.dart';
+import 'package:batti_nala/features/shared/widgets/action_button.dart';
 import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
 import 'package:batti_nala/features/auth/view/auth_header_widget.dart';
 import 'package:batti_nala/features/auth/view/input_label_widget.dart';
@@ -42,14 +42,14 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
     final authState = ref.watch(authNotifierProvider);
 
     // Listen for verification success
-    ref.listen<bool>(
-      authNotifierProvider.select((state) => state.isVerified),
-      (previous, next) {
-        if (next && mounted) {
-          SnackbarService.showSuccess(context, 'Account verified successfully!');
-        }
-      },
-    );
+    ref.listen<bool>(authNotifierProvider.select((state) => state.isVerified), (
+      previous,
+      next,
+    ) {
+      if (next && mounted) {
+        SnackbarService.showSuccess(context, 'Account verified successfully!');
+      }
+    });
 
     // Listen for error messages
     ref.listen<String?>(
@@ -75,7 +75,8 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
                 const SizedBox(height: 60),
                 const AuthHeaderWidget(
                   mainText: 'Verify Account',
-                  infoText: 'Enter the verification code sent to your email/phone',
+                  infoText:
+                      'Enter the verification code sent to your email/phone',
                 ),
                 const SizedBox(height: 30),
 

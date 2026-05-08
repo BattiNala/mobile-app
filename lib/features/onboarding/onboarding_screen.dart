@@ -1,9 +1,9 @@
 import 'package:batti_nala/core/constants/colors.dart';
-import 'package:batti_nala/core/widgets/action_button.dart';
+import 'package:batti_nala/features/shared/widgets/action_button.dart';
 import 'package:batti_nala/features/onboarding/info_card_widget.dart';
+import 'package:batti_nala/features/onboarding/onboarding_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 class OnboardingScreen extends ConsumerWidget {
   const OnboardingScreen({super.key});
@@ -77,7 +77,7 @@ class OnboardingScreen extends ConsumerWidget {
                   width: double.infinity,
                   label: 'Get Started',
                   onPressed: () {
-                    context.push('/login');
+                    ref.read(onboardingProvider.notifier).completeOnBoarding();
                   },
                 ),
               ),

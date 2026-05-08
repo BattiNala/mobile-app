@@ -1,4 +1,4 @@
-import 'package:batti_nala/core/models/user_model.dart';
+import 'package:batti_nala/features/shared/models/user_model.dart';
 
 class AuthState {
   final String name;
@@ -62,7 +62,9 @@ class AuthState {
       isConfirmPasswordObscured:
           isConfirmPasswordObscured ?? this.isConfirmPasswordObscured,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
       user: clearUser ? null : (user ?? this.user),
       verificationCode: verificationCode ?? this.verificationCode,
       isVerified: isVerified ?? this.isVerified,

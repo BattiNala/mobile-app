@@ -34,8 +34,13 @@ class CitizenDashboardController extends StateNotifier<List<IssueModel>> {
     ]);
   }
 
-  int get pendingCount =>
-      state.where((i) => i.status.toUpperCase() == 'OPEN').length;
+  int get pendingCount {
+    const pendingStatuses = {'OPEN', 'PENDING_VERIFICATION', 'IN_PROGRESS'};
+
+    return state
+        .where((i) => pendingStatuses.contains(i.status.toUpperCase()))
+        .length;
+  }
 
   int get resolvedCount =>
       state.where((i) => i.status.toUpperCase() == 'RESOLVED').length;

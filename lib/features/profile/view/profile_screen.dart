@@ -1,5 +1,5 @@
 import 'package:batti_nala/core/constants/colors.dart';
-import 'package:batti_nala/core/widgets/action_button.dart';
+import 'package:batti_nala/features/shared/widgets/action_button.dart';
 import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
 import 'package:batti_nala/features/profile/view/profile_avatar.dart';

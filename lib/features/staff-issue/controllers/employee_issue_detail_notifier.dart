@@ -1,11 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:batti_nala/features/shared-issue/models/issue_model.dart';
 import 'package:batti_nala/features/shared-issue/repository/issue_repository.dart';
-import 'package:batti_nala/features/staff-issue/controllers/employee_dashboard_notifier.dart';
+import 'package:batti_nala/features/staff_dashboard/controller/employee_dashboard_notifier.dart';
 
-class EmployeeIssueDetailNotifier extends StateNotifier<AsyncValue<IssueModel>> {
+class EmployeeIssueDetailNotifier
+    extends StateNotifier<AsyncValue<IssueModel>> {
   EmployeeIssueDetailNotifier(this.ref, this._repository, this.issueLabel)
-      : super(const AsyncValue.loading()) {
+    : super(const AsyncValue.loading()) {
     fetchIssueDetail();
   }
 
@@ -59,8 +60,12 @@ class EmployeeIssueDetailNotifier extends StateNotifier<AsyncValue<IssueModel>> 
   }
 }
 
-final employeeIssueDetailProvider = StateNotifierProvider.family<
-    EmployeeIssueDetailNotifier, AsyncValue<IssueModel>, String>((ref, label) {
-  final repository = ref.read(issueRepositoryProvider);
-  return EmployeeIssueDetailNotifier(ref, repository, label);
-});
+final employeeIssueDetailProvider =
+    StateNotifierProvider.family<
+      EmployeeIssueDetailNotifier,
+      AsyncValue<IssueModel>,
+      String
+    >((ref, label) {
+      final repository = ref.read(issueRepositoryProvider);
+      return EmployeeIssueDetailNotifier(ref, repository, label);
+    });
