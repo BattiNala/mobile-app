@@ -279,7 +279,7 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
                     width: 60,
                     height: 60,
                     child: const FaIcon(
-                      FontAwesomeIcons.mapSigns,
+                      FontAwesomeIcons.signsPost,
                       color: AppColors.primaryBlue800,
                       size: 45,
                     ),
