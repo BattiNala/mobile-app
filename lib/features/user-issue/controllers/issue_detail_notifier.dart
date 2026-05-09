@@ -39,7 +39,7 @@ class IssueDetailNotifier extends StateNotifier<IssueDetailState> {
       if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
-        errorMessage: 'Failed to fetch issue details: ${e.toString()}',
+        errorMessage: 'Failed to fetch issue details',
       );
     }
   }

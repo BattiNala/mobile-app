@@ -149,11 +149,13 @@ class CreateIssueController extends StateNotifier<CreateIssueState> {
         final decoded = jsonDecode(trimmed);
         if (decoded is Map) {
           final detail = decoded['detail'];
-          if (detail is String && detail.trim().isNotEmpty)
+          if (detail is String && detail.trim().isNotEmpty) {
             return detail.trim();
+          }
           final message = decoded['message'];
-          if (message is String && message.trim().isNotEmpty)
+          if (message is String && message.trim().isNotEmpty) {
             return message.trim();
+          }
         }
       } catch (_) {}
       return trimmed;

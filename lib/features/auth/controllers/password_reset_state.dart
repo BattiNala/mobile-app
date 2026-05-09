@@ -1,14 +1,9 @@
-enum PasswordResetStep {
-  requestOtp,
-  verifyOtp,
-  confirmPassword,
-}
+enum PasswordResetStep { requestOtp, verifyOtp, confirmPassword }
 
 class PasswordResetState {
   final PasswordResetStep step;
   final bool isLoading;
   final String? errorMessage;
-
   final String username;
   final String otpCode;
   final String newPassword;
@@ -30,15 +25,15 @@ class PasswordResetState {
   });
 
   const PasswordResetState.initial()
-      : step = PasswordResetStep.requestOtp,
-        isLoading = false,
-        errorMessage = null,
-        username = '',
-        otpCode = '',
-        newPassword = '',
-        confirmPassword = '',
-        resetToken = null,
-        successMessage = null;
+    : step = PasswordResetStep.requestOtp,
+      isLoading = false,
+      errorMessage = null,
+      username = '',
+      otpCode = '',
+      newPassword = '',
+      confirmPassword = '',
+      resetToken = null,
+      successMessage = null;
 
   PasswordResetState copyWith({
     PasswordResetStep? step,
@@ -64,4 +59,3 @@ class PasswordResetState {
     );
   }
 }
-
