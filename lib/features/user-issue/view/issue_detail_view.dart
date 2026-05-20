@@ -124,7 +124,12 @@ class IssueDetailView extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Visual Status Bar
-          _buildStatusBar(issue.status),
+          _buildStatusBar(
+            issue.status,
+            rejectedReason: issue.status.toUpperCase() == 'REJECTED'
+                ? issue.rejectedReason
+                : null,
+          ),
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -227,7 +232,7 @@ class IssueDetailView extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatusBar(String status) {
+  Widget _buildStatusBar(String status, {String? rejectedReason}) {
     final color = _getStatusColor(status);
     return Container(
       width: double.infinity,
@@ -268,6 +273,41 @@ class IssueDetailView extends ConsumerWidget {
                     height: 1.3,
                   ),
                 ),
+                if (status.toUpperCase() == 'REJECTED' &&
+                    rejectedReason != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: color.withValues(alpha: 0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Reason:',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: color,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          rejectedReason,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textMain.withValues(alpha: 0.8),
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -337,6 +377,8 @@ class IssueDetailView extends ConsumerWidget {
         return const Color(0xFF8B5CF6);
       case 'RESOLVED':
         return const Color(0xFF10B981);
+      case 'REJECTED':
+        return const Color(0xFFEF4444);
       default:
         return AppColors.textMuted;
     }
@@ -358,6 +400,8 @@ class IssueDetailView extends ConsumerWidget {
         return Icons.verified_user_rounded;
       case 'resolved':
         return Icons.check_circle_rounded;
+      case 'rejected':
+        return Icons.cancel_rounded;
       default:
         return Icons.info_rounded;
     }
@@ -375,6 +419,8 @@ class IssueDetailView extends ConsumerWidget {
         return 'Work is currently being executed.';
       case 'resolved':
         return 'Verified as fixed by municipality.';
+      case 'rejected':
+        return 'Issue was rejected after review';
       default:
         return 'No status updates yet.';
     }

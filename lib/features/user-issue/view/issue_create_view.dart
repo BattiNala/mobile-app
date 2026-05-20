@@ -315,7 +315,7 @@ class _ReportIssueScreenState extends ConsumerState<ReportIssueScreen> {
         elevation: 0,
       ),
       backgroundColor: AppColors.background,
-      bottomNavigationBar: _isAnalyzing
+      bottomNavigationBar: _isAnalyzing || createIssueState.isLoading
           ? null
           : Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
