@@ -13,6 +13,7 @@ class InputLabelWidget extends ConsumerWidget {
   final String? Function(String?)? validator;
   final void Function(String) onChanged;
   final TextEditingController? controller;
+  final Iterable<String>? autofillHints;
 
   const InputLabelWidget({
     super.key,
@@ -25,6 +26,7 @@ class InputLabelWidget extends ConsumerWidget {
     this.textCapitalization = TextCapitalization.none,
     this.isPassword = false,
     this.controller,
+    this.autofillHints,
   });
 
   @override
@@ -42,13 +44,14 @@ class InputLabelWidget extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         TextFormField(
+          autofillHints: autofillHints,
           controller: controller,
           validator: validator,
           keyboardType: inputType,
           obscureText: isPassword
               ? (label.toLowerCase().contains('confirm')
-                  ? ref.watch(authNotifierProvider).isConfirmPasswordObscured
-                  : ref.watch(authNotifierProvider).isPasswordObscured)
+                    ? ref.watch(authNotifierProvider).isConfirmPasswordObscured
+                    : ref.watch(authNotifierProvider).isPasswordObscured)
               : false,
           onChanged: onChanged,
           textCapitalization: textCapitalization!,
@@ -68,9 +71,14 @@ class InputLabelWidget extends ConsumerWidget {
                             .togglePasswordVisibility();
                       }
                     },
-                    icon: (label.toLowerCase().contains('confirm')
-                            ? ref.watch(authNotifierProvider).isConfirmPasswordObscured
-                            : ref.watch(authNotifierProvider).isPasswordObscured)
+                    icon:
+                        (label.toLowerCase().contains('confirm')
+                            ? ref
+                                  .watch(authNotifierProvider)
+                                  .isConfirmPasswordObscured
+                            : ref
+                                  .watch(authNotifierProvider)
+                                  .isPasswordObscured)
                         ? const Icon(Icons.visibility_off, color: Colors.grey)
                         : const Icon(Icons.visibility, color: Colors.grey),
                   )
