@@ -46,7 +46,7 @@ class IssueDetailNotifier extends StateNotifier<IssueDetailState> {
 }
 
 final issueDetailProvider =
-    StateNotifierProvider.family<IssueDetailNotifier, IssueDetailState, String>(
+    StateNotifierProvider.autoDispose.family<IssueDetailNotifier, IssueDetailState, String>(
       (ref, label) {
         final repository = ref.read(issueRepositoryProvider);
         final notifier = IssueDetailNotifier(repository);

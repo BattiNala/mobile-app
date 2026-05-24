@@ -3,7 +3,6 @@ import 'package:batti_nala/features/shared/widgets/action_button.dart';
 import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
-import 'package:batti_nala/features/shared/models/user_model.dart';
 import 'package:batti_nala/features/auth/view/auth_header_widget.dart';
 import 'package:batti_nala/features/auth/view/input_label_widget.dart';
 import 'package:flutter/material.dart';
@@ -52,25 +51,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
 
-    // Listen for user changes only (not entire state which fires repeatedly)
-    ref.listen<User?>(authNotifierProvider.select((state) => state.user), (
-      previous,
-      next,
-    ) {
-      // Only navigate if user just logged in (transitioned from null to logged in)
-      if (next != null && previous == null && mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) {
-            final role = next.role;
-            final route = role == 'citizen'
-                ? '/citizen-dashboard'
-                : '/staff-dashboard';
-            context.go(route);
-          }
-        });
-      }
-    });
-
     // Listen for error messages
     ref.listen<String?>(
       authNotifierProvider.select((state) => state.errorMessage),
@@ -93,75 +73,86 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 18.0),
           child: Form(
             key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 60),
-                const AuthHeaderWidget(
-                  mainText: 'Welcome Back',
-                  infoText: 'Sign in to continue',
-                ),
-                const SizedBox(height: 30),
+            child: AutofillGroup(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 60),
+                  const AuthHeaderWidget(
+                    mainText: 'Welcome Back',
+                    infoText: 'Sign in to continue',
+                  ),
+                  const SizedBox(height: 30),
 
-                // Email/Phone34 Field
-                InputLabelWidget(
-                  controller: _usernameController,
-                  validator: AppValidators.validateUsername,
-                  icon: FontAwesomeIcons.envelope,
-                  inputType: TextInputType.emailAddress,
-                  label: 'Email/Phone',
-                  hint: 'Enter your email or phone number',
-                  onChanged: (val) =>
-                      ref.read(authNotifierProvider.notifier).updateEmail(val),
-                ),
+                  // Email/Phone34 Field
+                  InputLabelWidget(
+                    autofillHints: const [
+                      AutofillHints.username,
+                      AutofillHints.email,
+                    ],
+                    controller: _usernameController,
+                    validator: AppValidators.validateUsername,
+                    icon: FontAwesomeIcons.envelope,
+                    inputType: TextInputType.emailAddress,
+                    label: 'Email/Phone',
+                    hint: 'Enter your email or phone number',
+                    onChanged: (val) => ref
+                        .read(authNotifierProvider.notifier)
+                        .updateEmail(val),
+                  ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                // Password Field
-                InputLabelWidget(
-                  controller: _passwordController,
-                  validator: AppValidators.validatePassword,
-                  icon: FontAwesomeIcons.lock,
-                  inputType: TextInputType.visiblePassword,
-                  isPassword: true,
-                  label: 'Password',
-                  hint: 'Enter your password',
-                  onChanged: (val) => ref
-                      .read(authNotifierProvider.notifier)
-                      .updatePassword(val),
-                ),
+                  // Password Field
+                  InputLabelWidget(
+                    autofillHints: const [AutofillHints.password],
+                    controller: _passwordController,
+                    validator: AppValidators.validatePassword,
+                    icon: FontAwesomeIcons.lock,
+                    inputType: TextInputType.visiblePassword,
+                    isPassword: true,
+                    label: 'Password',
+                    hint: 'Enter your password',
+                    onChanged: (val) => ref
+                        .read(authNotifierProvider.notifier)
+                        .updatePassword(val),
+                  ),
 
-                // Forgot Password Link
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {
-                      context.push('/password-reset');
-                    },
-                    child: const Text(
-                      'Forgot Password?',
-                      style: TextStyle(color: Colors.blueAccent, fontSize: 13),
+                  // Forgot Password Link
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        context.push('/password-reset');
+                      },
+                      child: const Text(
+                        'Forgot Password?',
+                        style: TextStyle(
+                          color: Colors.blueAccent,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 10),
+                  const SizedBox(height: 10),
 
-                // Login Button
-                ActionButton(
-                  width: double.infinity,
-                  label: authState.isLoading ? 'Signing In...' : 'Sign In',
-                  backgroundColor: AppColors.primaryBlue,
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _handleLogin();
-                    }
-                  },
-                  isLoading: authState.isLoading,
-                ),
+                  // Login Button
+                  ActionButton(
+                    width: double.infinity,
+                    label: authState.isLoading ? 'Signing In...' : 'Sign In',
+                    backgroundColor: AppColors.primaryBlue,
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        _handleLogin();
+                      }
+                    },
+                    isLoading: authState.isLoading,
+                  ),
 
-                _buildRegisterLink(),
-              ],
+                  _buildRegisterLink(),
+                ],
+              ),
             ),
           ),
         ),

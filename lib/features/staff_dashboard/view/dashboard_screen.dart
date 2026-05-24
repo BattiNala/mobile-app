@@ -269,9 +269,12 @@ class StaffDashboard extends ConsumerWidget {
                       child: _issueCard(
                         issue: issue,
                         index: index + 1,
-                        onTap: () => context.push(
-                          '/employee-issue-detail/${issue.issueLabel}',
-                        ),
+                        onTap: () async {
+                          await context.push(
+                            '/employee-issue-detail/${issue.issueLabel}',
+                          );
+                          dashboardController.refreshReports();
+                        },
                         isTablet: isTablet,
                       ),
                     );
@@ -334,9 +337,12 @@ class StaffDashboard extends ConsumerWidget {
                         child: _issueCard(
                           issue: issue,
                           isResolved: true,
-                          onTap: () => context.push(
-                            '/employee-issue-detail/${issue.issueLabel}',
-                          ),
+                          onTap: () async {
+                            await context.push(
+                              '/employee-issue-detail/${issue.issueLabel}',
+                            );
+                            dashboardController.refreshReports();
+                          },
                           isTablet: isTablet,
                         ),
                       );

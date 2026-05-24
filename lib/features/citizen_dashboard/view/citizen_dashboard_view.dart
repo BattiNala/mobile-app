@@ -427,10 +427,11 @@ class CitizenDashboardView extends ConsumerWidget {
                         itemBuilder: (context, index) {
                           final report = reports[index];
                           return InkWell(
-                            onTap: () {
-                              context.push(
+                            onTap: () async {
+                              await context.push(
                                 '/issue-detail/${report.issueLabel}',
                               );
+                              dashboardController.refreshReports();
                             },
                             child: IssueCardWidget(issue: report),
                           );

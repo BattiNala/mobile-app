@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.batti_nala"
+    namespace = "com.battinala"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.batti_nala"
+        applicationId = "com.battinala"
         minSdk = 27
         targetSdk = 35
         versionCode = flutter.versionCode

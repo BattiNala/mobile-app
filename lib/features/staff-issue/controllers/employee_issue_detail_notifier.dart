@@ -61,7 +61,7 @@ class EmployeeIssueDetailNotifier
 }
 
 final employeeIssueDetailProvider =
-    StateNotifierProvider.family<
+    StateNotifierProvider.autoDispose.family<
       EmployeeIssueDetailNotifier,
       AsyncValue<IssueModel>,
       String

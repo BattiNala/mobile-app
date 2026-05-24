@@ -80,5 +80,7 @@
 	<string>Batti Nala needs photo library access to attach images to issue reports</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Batti Nala may need microphone access for video recording</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Authenticate to continue.</string>
 </dict>
 </plist>

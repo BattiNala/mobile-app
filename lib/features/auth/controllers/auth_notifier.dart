@@ -47,14 +47,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isVerified: authResponse.isVerified ?? false,
       );
 
-      if (user.isVerified) {
-        await ref
-            .read(profileNotifierProvider.notifier)
-            .fetchProfile(user.role);
-      }
-
       if (!mounted) return;
       state = state.copyWith(user: user, isLoading: false);
+
+      if (user.isVerified) {
+        final roleLower = user.role.toLowerCase();
+        if (roleLower == 'citizen') {
+          await ref.read(dashboardProvider.notifier).refreshReports();
+        } else if (roleLower == 'staff') {
+          await ref.read(employeeDashboardProvider.notifier).refreshReports();
+        }
+      }
     } on AuthError catch (e) {
       if (!mounted) return;
       // Reset to null first so the listener fires even if the same error repeats
@@ -98,12 +101,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isVerified: authResponse.isVerified ?? false,
       );
 
-      if (user.isVerified) {
-        await ref
-            .read(profileNotifierProvider.notifier)
-            .fetchProfile(user.role);
-      }
-
       if (!mounted) return;
       state = state.copyWith(
         user: user,
@@ -114,6 +111,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         errorMessage: null,
       );
+
+      if (user.isVerified) {
+        final roleLower = user.role.toLowerCase();
+        if (roleLower == 'citizen') {
+          await ref.read(dashboardProvider.notifier).refreshReports();
+        } else if (roleLower == 'staff') {
+          await ref.read(employeeDashboardProvider.notifier).refreshReports();
+        }
+      }
     } on AuthError catch (e) {
       if (!mounted) return;
       state = state.copyWith(isLoading: false, clearErrorMessage: true);
@@ -153,10 +159,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final updatedUser = User(role: state.user!.role, isVerified: true);
         state = state.copyWith(user: updatedUser);
 
-        // Fetch profile once verified
-        await ref
-            .read(profileNotifierProvider.notifier)
-            .fetchProfile(updatedUser.role);
+        final roleLower = updatedUser.role.toLowerCase();
+        if (roleLower == 'citizen') {
+          await ref.read(dashboardProvider.notifier).refreshReports();
+        } else if (roleLower == 'staff') {
+          await ref.read(employeeDashboardProvider.notifier).refreshReports();
+        }
       }
 
       if (!mounted) return;
@@ -208,7 +216,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
         if (!mounted) return;
         state = state.copyWith(user: user);
-        await ref.read(profileNotifierProvider.notifier).fetchProfile(role);
+        
+        if (isVerified) {
+          final roleLower = role.toLowerCase();
+          if (roleLower == 'citizen') {
+            await ref.read(dashboardProvider.notifier).refreshReports();
+          } else if (roleLower == 'staff') {
+            await ref.read(employeeDashboardProvider.notifier).refreshReports();
+          }
+        } else {
+          await ref.read(profileNotifierProvider.notifier).fetchProfile(role);
+        }
       }
     } catch (_) {}
   }
