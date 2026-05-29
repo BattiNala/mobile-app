@@ -3,12 +3,12 @@ import 'package:batti_nala/core/constants/colors.dart';
 
 class IssueMetaInfoCard extends StatelessWidget {
   final DateTime createdAt;
-  final String? assignedTo;
-  
+  final String? reporttedBy;
+
   const IssueMetaInfoCard({
-    super.key, 
-    required this.createdAt, 
-    this.assignedTo,
+    super.key,
+    required this.createdAt,
+    this.reporttedBy,
   });
 
   @override
@@ -26,15 +26,15 @@ class IssueMetaInfoCard extends StatelessWidget {
             'Assigned on',
             '${createdAt.day}/${createdAt.month}/${createdAt.year}',
           ),
-          if (assignedTo != null) ...[
+          if (reporttedBy != null) ...[
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Divider(height: 1, color: Colors.white),
             ),
             _buildMetaRow(
               Icons.engineering_rounded,
-              'Assigned to',
-              assignedTo!,
+              'Reported by',
+              reporttedBy!,
             ),
           ],
         ],
@@ -47,8 +47,18 @@ class IssueMetaInfoCard extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: AppColors.textSecondary),
         const SizedBox(width: 12),
-        Text('$label   ', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textMain)),
+        Text(
+          '$label   ',
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textMain,
+          ),
+        ),
       ],
     );
   }
