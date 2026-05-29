@@ -104,7 +104,7 @@ class EmployeeIssueDetailView extends ConsumerWidget {
                       ],
                       IssueMetaInfoCard(
                         createdAt: issue.createdAt,
-                        assignedTo: issue.assignedTo,
+                        reporttedBy: issue.reportedBy,
                       ),
                     ],
                   ),

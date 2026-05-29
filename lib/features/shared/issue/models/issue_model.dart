@@ -5,6 +5,7 @@ class IssueModel {
   final String description;
   final String status;
   final String? assignedTo;
+  final String? reportedBy;
   final DateTime createdAt;
   final List<String> attachments;
   final String rejectedReason;
@@ -20,6 +21,7 @@ class IssueModel {
     required this.description,
     required this.status,
     this.assignedTo,
+    this.reportedBy,
     required this.createdAt,
     required this.attachments,
     required this.rejectedReason,
@@ -37,6 +39,7 @@ class IssueModel {
       description: json['description']?.toString() ?? 'No description provided',
       status: json['status']?.toString() ?? 'OPEN',
       assignedTo: json['assigned_to']?.toString(),
+      reportedBy: json['reported_by']?.toString(),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(
                   json['created_at'].toString().replaceFirst(' ', 'T'),
