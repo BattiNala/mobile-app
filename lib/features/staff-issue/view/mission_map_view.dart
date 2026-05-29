@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:batti_nala/core/services/snackbar_services.dart';
+import 'package:batti_nala/core/services/location_service.dart';
 import 'package:batti_nala/features/shared/widgets/action_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -45,25 +46,113 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
 
   Future<void> _initInitialState() async {
     try {
-      final pos = await Geolocator.getCurrentPosition();
-      _currentLatLng = LatLng(pos.latitude, pos.longitude);
+      final locationService = ref.read(locationServiceProvider);
+      final coords = await locationService.getCurrentCoordinates(
+        timeLimit: const Duration(seconds: 10),
+      );
+      _currentLatLng = LatLng(coords.latitude, coords.longitude);
       await _fetchRoute();
       if (mounted) setState(() => _isLoading = false);
     } catch (e) {
+      debugPrint('[MISSION_MAP] Error getting location: $e');
       if (mounted) {
-        setState(() => _error = 'Location permissions or service error: $e');
+        String errorMsg = 'Could not access location: ${e.toString()}';
+
+        if (e.toString().contains('PERMISSION_DENIED_FOREVER')) {
+          errorMsg =
+              'Location access is blocked. Please enable it in system settings.';
+          if (mounted) {
+            _showPermissionDialog();
+          }
+        } else if (e.toString().contains('PERMISSION_DENIED')) {
+          errorMsg = 'Location permission was denied.';
+        } else if (e.toString().contains('Location services are disabled')) {
+          errorMsg = 'Please enable GPS/Location services on your device.';
+        }
+
+        setState(() => _error = errorMsg);
       }
     }
   }
 
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.location_off, color: Colors.red),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Location Access Required',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'To use live navigation for this mission, location permissions are required. '
+          'Please enable location access in your app settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ActionButton(
+            label: 'Open Settings',
+            onPressed: () {
+              Geolocator.openAppSettings();
+              Navigator.pop(context);
+            },
+            backgroundColor: AppColors.adminRed,
+            textColor: Colors.white,
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _onStartNavigation() async {
+    // Check if location service is enabled
     final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!mounted) return;
     if (!serviceEnabled) {
-      SnackbarService.showError(context, 'GPS is disabled.');
+      if (!mounted) return;
+      SnackbarService.showError(
+        context,
+        'GPS is disabled. Please enable location services.',
+      );
       return;
     }
 
+    // Check location permission
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (!mounted) return;
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (!mounted) return;
+    }
+
+    if (permission == LocationPermission.denied) {
+      if (!mounted) return;
+      SnackbarService.showError(context, 'Location permission denied.');
+      return;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (!mounted) return;
+      SnackbarService.showError(
+        context,
+        'Location access permanently denied. Enable in settings.',
+      );
+      return;
+    }
+
+    if (!mounted) return;
     setState(() => _isNavigating = true);
 
     _positionSubscription = Geolocator.getPositionStream(
