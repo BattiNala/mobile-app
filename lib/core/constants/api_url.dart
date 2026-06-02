@@ -17,8 +17,8 @@ class ApiUrl {
 
     // Platform-specific defaults
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000/api/v1'; // Android emulator localhost
-      // return 'https://backend.parakramk.com.np/api/v1'; // Android emulator localhost
+      // return 'http://10.0.2.2:8000/api/v1'; // Android emulator localhost
+      return 'https://backend.parakramk.com.np/api/v1'; // Android emulator localhost
     } else if (Platform.isIOS) {
       return 'http://127.0.0.1:8000/api/v1'; // iOS simulator localhost
     } else {
