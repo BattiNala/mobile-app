@@ -18,7 +18,7 @@ class EmployeeDashboardController extends StateNotifier<List<IssueModel>> {
     try {
       final issues = await _repository.getAssignedIssues();
       if (!mounted) return;
-      state = issues;
+      state = issues..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     } catch (e) {
       if (!mounted) return;
       state = [];

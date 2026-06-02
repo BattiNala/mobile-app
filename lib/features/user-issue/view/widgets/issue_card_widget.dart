@@ -1,6 +1,7 @@
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/shared/issue/models/issue_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class IssueCardWidget extends StatelessWidget {
   final IssueModel issue;
@@ -271,11 +272,7 @@ class IssueCardWidget extends StatelessWidget {
   }
 
   String _formatDateTime(DateTime dateTime) {
-    final day = dateTime.day.toString().padLeft(2, '0');
-    final month = dateTime.month.toString().padLeft(2, '0');
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    return '$day/$month $hour:$minute';
+    return DateFormat('dd/MM HH:mm').format(dateTime.toLocal());
   }
 
   Color _getStatusColor(String status) {
