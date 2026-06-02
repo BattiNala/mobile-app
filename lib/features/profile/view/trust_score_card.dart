@@ -24,7 +24,20 @@ class TrustScoreCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Trust Score', style: Theme.of(context).textTheme.titleSmall),
+          Row(
+            children: [
+              Text(
+                'Trust Score',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              Text(
+                ': $score',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(color: color),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           LinearProgressIndicator(
             value: score / 100,
