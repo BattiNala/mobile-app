@@ -34,7 +34,10 @@ class IssueDetailView extends ConsumerWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   _buildHeaderSliver(context, issueLabel, state.issue!),
-                  _buildContentSliver(context, state.issue!),
+                  SliverSafeArea(
+                    top: false,
+                    sliver: _buildContentSliver(context, state.issue!),
+                  ),
                 ],
               ),
             ),

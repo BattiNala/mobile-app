@@ -18,6 +18,8 @@ class OnboardingScreen extends ConsumerWidget {
         height: height,
         padding: EdgeInsets.all(width * 0.0002),
         decoration: const BoxDecoration(gradient: AppColors.welcomeGradient),
+        child: SafeArea(
+        top: false,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -85,6 +87,7 @@ class OnboardingScreen extends ConsumerWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

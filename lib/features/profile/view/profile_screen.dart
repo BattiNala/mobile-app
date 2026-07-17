@@ -70,7 +70,9 @@ class ProfileScreen extends ConsumerWidget {
             const SliverToBoxAdapter(child: ProfileHeader()),
 
             /// MAIN CONTENT
-            SliverPadding(
+            SliverSafeArea(
+              top: false,
+              sliver: SliverPadding(
               padding: const EdgeInsets.all(24),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
@@ -157,6 +159,7 @@ class ProfileScreen extends ConsumerWidget {
                 ]),
               ),
             ),
+          ),
           ],
         ),
       ),

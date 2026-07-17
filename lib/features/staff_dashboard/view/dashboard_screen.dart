@@ -233,7 +233,9 @@ class StaffDashboard extends ConsumerWidget {
             ),
 
             /// ACTIVE ISSUES
-            SliverPadding(
+            SliverSafeArea(
+              top: false,
+              sliver: SliverPadding(
               padding: EdgeInsets.all(isTablet ? 24 : 16),
 
               sliver: SliverList(
@@ -351,6 +353,7 @@ class StaffDashboard extends ConsumerWidget {
                 ]),
               ),
             ),
+          ),
           ],
         ),
       ),

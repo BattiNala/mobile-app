@@ -159,6 +159,9 @@ class CitizenDashboardView extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ListView.builder(
                   itemCount: 5,
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).padding.bottom,
+                  ),
                   itemBuilder: (context, index) {
                     return Shimmer.fromColors(
                       baseColor: AppColors.primaryBlue.withValues(alpha: 0.2),
@@ -355,9 +358,11 @@ class CitizenDashboardView extends ConsumerWidget {
             ),
 
             /// REPORT LIST
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+            SliverSafeArea(
+              top: false,
+              sliver: SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -442,6 +447,7 @@ class CitizenDashboardView extends ConsumerWidget {
                 ),
               ),
             ),
+          ),
           ],
         ),
       ),
