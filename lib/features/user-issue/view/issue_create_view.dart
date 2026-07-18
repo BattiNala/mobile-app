@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:ui';
-
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/services/gemini_analyzer.dart';
 import 'package:batti_nala/core/services/snackbar_services.dart';
@@ -845,7 +844,9 @@ class _AiSuggestionDialog extends StatelessWidget {
             24,
             0,
             24,
-            24 + MediaQuery.of(context).viewInsets.bottom,
+            24 +
+                MediaQuery.of(context).viewInsets.bottom +
+                MediaQuery.of(context).padding.bottom,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
