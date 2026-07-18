@@ -143,8 +143,7 @@ class AuthRepository {
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 401) {
-        // Refresh token is invalid or expired
-        await _storage.clearAll();
+        await _storage.clearSession();
         throw AuthError(detail: 'Invalid or expired token');
       }
       throw Exception('Network error: ${e.message}');

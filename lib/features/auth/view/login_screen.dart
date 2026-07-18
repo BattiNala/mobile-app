@@ -1,9 +1,10 @@
 import 'dart:ui';
-
 import 'package:batti_nala/core/constants/colors.dart';
+import 'package:batti_nala/core/services/biometric_util.dart';
 import 'package:batti_nala/core/services/snackbar_services.dart';
 import 'package:batti_nala/core/utils/validators.dart';
 import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
+import 'package:batti_nala/features/auth/controllers/biometric_notifier.dart';
 import 'package:batti_nala/features/auth/view/auth_header_widget.dart';
 import 'package:batti_nala/features/auth/view/input_label_widget.dart';
 import 'package:batti_nala/features/shared/widgets/action_button.dart';
@@ -151,6 +152,51 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                 ),
                                 child: Column(
                                   children: [
+                                    Consumer(
+                                      builder: (context, ref, _) {
+                                        final bioState = ref.watch(
+                                          biometricNotifierProvider,
+                                        );
+                                        if (!bioState.isAvailable ||
+                                            bioState.savedAccounts.isEmpty) {
+                                          return const SizedBox.shrink();
+                                        }
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 16,
+                                          ),
+                                          child: SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            physics:
+                                                const BouncingScrollPhysics(),
+                                            child: Row(
+                                              children: bioState.savedAccounts
+                                                  .map(
+                                                    (username) => Padding(
+                                                      padding:
+                                                          const EdgeInsets.only(
+                                                            right: 8,
+                                                          ),
+                                                      child: _BiometricAccountChip(
+                                                        username: username,
+                                                        isFaceId: BiometricUtil
+                                                            .instance
+                                                            .supportsFaceId,
+                                                        isAuthenticating: bioState
+                                                            .isAuthenticating,
+                                                        onTap: () =>
+                                                            _handleBiometricLogin(
+                                                              username,
+                                                            ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                  .toList(),
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
                                     InputLabelWidget(
                                       autofillHints: const [
                                         AutofillHints.username,
@@ -215,6 +261,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                                       borderRadius: 14,
                                       verticalPadding: 15,
                                     ),
+
+                                    Consumer(
+                                      builder: (context, ref, _) {
+                                        final bioState = ref.watch(
+                                          biometricNotifierProvider,
+                                        );
+                                        if (!bioState.isAvailable ||
+                                            bioState.savedAccounts.isEmpty) {
+                                          return const SizedBox.shrink();
+                                        }
+
+                                        final username =
+                                            bioState.savedAccounts.first;
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 14,
+                                          ),
+                                          child: _AnimatedBiometricButton(
+                                            isAuthenticating:
+                                                bioState.isAuthenticating,
+                                            onTap: () =>
+                                                _handleBiometricLogin(username),
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ],
                                 ),
                               ),
@@ -235,6 +307,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _handleBiometricLogin(String username) async {
+    final authenticated = await ref
+        .read(biometricNotifierProvider.notifier)
+        .authenticate();
+    if (!authenticated || !mounted) return;
+    await ref
+        .read(authNotifierProvider.notifier)
+        .loginWithRefreshToken(username);
   }
 
   Widget _buildRegisterLink() {
@@ -263,6 +345,183 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimatedBiometricButton extends StatefulWidget {
+  final bool isAuthenticating;
+  final VoidCallback onTap;
+
+  const _AnimatedBiometricButton({
+    required this.isAuthenticating,
+    required this.onTap,
+  });
+
+  @override
+  State<_AnimatedBiometricButton> createState() =>
+      _AnimatedBiometricButtonState();
+}
+
+class _AnimatedBiometricButtonState extends State<_AnimatedBiometricButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _scan;
+  late final Animation<double> _progress;
+
+  static const double _iconSize = 48;
+  // Cyan scan line colour — visible against the dark blue gradient background.
+  static const Color _scanColor = Color(0xFF00E5FF);
+
+  @override
+  void initState() {
+    super.initState();
+    _scan = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    )..repeat(reverse: true);
+    _progress = CurvedAnimation(parent: _scan, curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _scan.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isFaceId = BiometricUtil.instance.supportsFaceId;
+    final icon = isFaceId ? Icons.face_unlock_outlined : Icons.fingerprint;
+
+    return GestureDetector(
+      onTap: widget.isAuthenticating ? null : widget.onTap,
+      child: Column(
+        children: [
+          SizedBox(
+            width: _iconSize,
+            height: _iconSize,
+            child: AnimatedBuilder(
+              animation: _progress,
+              builder: (_, __) {
+                final frac = _progress.value;
+                final lineY = (frac * _iconSize).clamp(0.0, _iconSize - 2);
+                return Stack(
+                  clipBehavior: Clip.hardEdge,
+                  children: [
+                    // Dim base icon
+                    Icon(icon, color: Colors.white24, size: _iconSize),
+
+                    // Bright portion revealed by scan (top slice)
+                    ClipRect(
+                      child: Align(
+                        alignment: Alignment.topCenter,
+                        heightFactor: frac,
+                        child: Icon(icon, color: Colors.white, size: _iconSize),
+                      ),
+                    ),
+
+                    // Glowing scan line
+                    Positioned(
+                      top: lineY,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: 2.5,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.transparent,
+                              _scanColor.withValues(alpha: 0.7),
+                              _scanColor,
+                              _scanColor.withValues(alpha: 0.7),
+                              Colors.transparent,
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _scanColor.withValues(alpha: 0.6),
+                              blurRadius: 10,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            widget.isAuthenticating
+                ? 'Scanning...'
+                : isFaceId
+                ? 'Use Face ID'
+                : 'Use Fingerprint',
+            style: const TextStyle(color: Colors.white60, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BiometricAccountChip extends StatelessWidget {
+  final String username;
+  final bool isFaceId;
+  final bool isAuthenticating;
+  final VoidCallback onTap;
+
+  const _BiometricAccountChip({
+    required this.username,
+    required this.isFaceId,
+    required this.isAuthenticating,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: isAuthenticating ? null : onTap,
+      child: AnimatedOpacity(
+        opacity: isAuthenticating ? 0.5 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(50),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.4),
+              width: 1.2,
+            ),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isFaceId ? Icons.face_unlock_outlined : Icons.fingerprint,
+                  size: 15,
+                  color: Colors.white,
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  username,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

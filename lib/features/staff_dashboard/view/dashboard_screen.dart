@@ -1,10 +1,13 @@
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
+import 'package:batti_nala/features/auth/controllers/biometric_notifier.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
 import 'package:batti_nala/features/profile/view/profile_avatar.dart';
 import 'package:batti_nala/features/profile/view/profile_info_section.dart';
 import 'package:batti_nala/features/shared/issue/models/issue_model.dart';
 import 'package:batti_nala/features/shared/widgets/action_button.dart';
+import 'package:batti_nala/features/shared/widgets/biometric_login_card.dart';
+import 'package:batti_nala/features/shared/widgets/biometric_setup_sheet.dart';
 import 'package:batti_nala/features/shared/widgets/empty_state_widget.dart';
 import 'package:batti_nala/features/shared/widgets/logout_confirm_sheet.dart';
 import 'package:batti_nala/features/staff_dashboard/controller/employee_dashboard_notifier.dart';
@@ -26,6 +29,28 @@ class _StaffDashboardState extends ConsumerState<StaffDashboard>
   String _searchQuery = '';
   String _statusFilter = 'all';
   final _searchController = SearchController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final email = ref.read(authNotifierProvider).email ?? '';
+      if (email.isNotEmpty) {
+        await ref.read(biometricNotifierProvider.notifier).verifyForUser(email);
+      }
+      if (!mounted) return;
+      if (ref.read(biometricNotifierProvider).shouldPromptSetup) {
+        _showBiometricSetupDialog();
+      }
+    });
+  }
+
+  void _showBiometricSetupDialog() {
+    ref.read(biometricNotifierProvider.notifier).dismissSetupPrompt();
+    final username = ref.read(authNotifierProvider).email ?? '';
+    showBiometricSetupSheet(context, ref, username);
+  }
 
   static const _filters = [
     ('all', 'All'),
@@ -79,6 +104,13 @@ class _StaffDashboardState extends ConsumerState<StaffDashboard>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(biometricNotifierProvider.select((s) => s.shouldPromptSetup), (
+      _,
+      shouldPrompt,
+    ) {
+      if (shouldPrompt && mounted) _showBiometricSetupDialog();
+    });
+
     final issues = ref.watch(employeeDashboardProvider);
     final dashboardController = ref.read(employeeDashboardProvider.notifier);
     final profileState = ref.watch(profileNotifierProvider);
@@ -90,8 +122,7 @@ class _StaffDashboardState extends ConsumerState<StaffDashboard>
     }
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       bottomNavigationBar: _BottomNav(
         currentIndex: _tabIndex,
         onTap: (i) => setState(() => _tabIndex = i),
@@ -108,11 +139,7 @@ class _StaffDashboardState extends ConsumerState<StaffDashboard>
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(
-                  child: _buildHeader(
-                    employee,
-                    dashboardController,
-                    isDark,
-                  ),
+                  child: _buildHeader(employee, dashboardController, isDark),
                 ),
                 SliverSafeArea(
                   top: false,
@@ -124,25 +151,18 @@ class _StaffDashboardState extends ConsumerState<StaffDashboard>
                         SearchBar(
                           controller: _searchController,
                           hintText: 'Search issues...',
-                          leading: const Icon(
-                            Icons.search_rounded,
-                            size: 20,
-                          ),
+                          leading: const Icon(Icons.search_rounded, size: 20),
                           trailing: [
                             if (_searchQuery.isNotEmpty)
                               IconButton(
-                                icon: const Icon(
-                                  Icons.close_rounded,
-                                  size: 18,
-                                ),
+                                icon: const Icon(Icons.close_rounded, size: 18),
                                 onPressed: () => setState(() {
                                   _searchQuery = '';
                                   _searchController.clear();
                                 }),
                               ),
                           ],
-                          onChanged: (v) =>
-                              setState(() => _searchQuery = v),
+                          onChanged: (v) => setState(() => _searchQuery = v),
                           elevation: const WidgetStatePropertyAll(0),
                           backgroundColor: WidgetStatePropertyAll(
                             isDark
@@ -190,47 +210,45 @@ class _StaffDashboardState extends ConsumerState<StaffDashboard>
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
-                            children: _filters.map(
-                              ((String, String) f) {
-                                final isSelected = _statusFilter == f.$1;
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 8),
-                                  child: FilterChip(
-                                    label: Text(f.$2),
-                                    selected: isSelected,
-                                    onSelected: (_) => setState(
-                                      () => _statusFilter = f.$1,
-                                    ),
-                                    backgroundColor: isDark
-                                        ? AppColors.darkSurface2
-                                        : const Color(0xFFEEF2FF),
-                                    selectedColor: AppColors.primaryBlue
-                                        .withValues(alpha: 0.15),
-                                    labelStyle: TextStyle(
-                                      color: isSelected
-                                          ? AppColors.primaryBlue
-                                          : (isDark
-                                                ? AppColors.darkTextSecondary
-                                                : AppColors.textSecondary),
-                                      fontWeight: isSelected
-                                          ? FontWeight.w700
-                                          : FontWeight.w500,
-                                      fontSize: 13,
-                                    ),
-                                    side: BorderSide(
-                                      color: isSelected
-                                          ? AppColors.primaryBlue
-                                              .withValues(alpha: 0.5)
-                                          : (isDark
-                                                ? AppColors.darkBorder
-                                                : AppColors.border),
-                                      width: isSelected ? 1.5 : 1,
-                                    ),
-                                    showCheckmark: false,
+                            children: _filters.map(((String, String) f) {
+                              final isSelected = _statusFilter == f.$1;
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: FilterChip(
+                                  label: Text(f.$2),
+                                  selected: isSelected,
+                                  onSelected: (_) =>
+                                      setState(() => _statusFilter = f.$1),
+                                  backgroundColor: isDark
+                                      ? AppColors.darkSurface2
+                                      : const Color(0xFFEEF2FF),
+                                  selectedColor: AppColors.primaryBlue
+                                      .withValues(alpha: 0.15),
+                                  labelStyle: TextStyle(
+                                    color: isSelected
+                                        ? AppColors.primaryBlue
+                                        : (isDark
+                                              ? AppColors.darkTextSecondary
+                                              : AppColors.textSecondary),
+                                    fontWeight: isSelected
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                    fontSize: 13,
                                   ),
-                                );
-                              },
-                            ).toList(),
+                                  side: BorderSide(
+                                    color: isSelected
+                                        ? AppColors.primaryBlue.withValues(
+                                            alpha: 0.5,
+                                          )
+                                        : (isDark
+                                              ? AppColors.darkBorder
+                                              : AppColors.border),
+                                    width: isSelected ? 1.5 : 1,
+                                  ),
+                                  showCheckmark: false,
+                                ),
+                              );
+                            }).toList(),
                           ),
                         ),
 
@@ -241,15 +259,18 @@ class _StaffDashboardState extends ConsumerState<StaffDashboard>
 
                         if (_filteredIssues(issues).isEmpty)
                           EmptyStateWidget(
-                            title: _searchQuery.isNotEmpty ||
+                            title:
+                                _searchQuery.isNotEmpty ||
                                     _statusFilter != 'all'
                                 ? 'No Matches'
                                 : 'All Clear!',
-                            subtitle: _searchQuery.isNotEmpty ||
+                            subtitle:
+                                _searchQuery.isNotEmpty ||
                                     _statusFilter != 'all'
                                 ? 'Try a different search or filter.'
                                 : 'No active issues assigned to you right now.',
-                            icon: _searchQuery.isNotEmpty ||
+                            icon:
+                                _searchQuery.isNotEmpty ||
                                     _statusFilter != 'all'
                                 ? Icons.search_off_rounded
                                 : Icons.task_alt_rounded,
@@ -413,6 +434,7 @@ class _StaffProfileTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
     final profileState = ref.watch(profileNotifierProvider);
+    final bioState = ref.watch(biometricNotifierProvider);
     final user = authState.user;
     final employee = profileState.employeeProfile;
     final name = employee?.name ?? 'Staff';
@@ -466,8 +488,13 @@ class _StaffProfileTab extends ConsumerWidget {
                 if (user != null)
                   ProfileAvatarCard(name: name, role: user.role),
                 const SizedBox(height: 20),
-                if (employee != null)
-                  ProfileInfoSection(employee: employee),
+                if (employee != null) ProfileInfoSection(employee: employee),
+
+                if (bioState.isAvailable) ...[
+                  const SizedBox(height: 20),
+                  const BiometricLoginCard(),
+                ],
+
                 const SizedBox(height: 20),
                 ActionButton(
                   label: 'Logout',
@@ -585,11 +612,7 @@ class _BottomNav extends StatelessWidget {
   });
 
   static const _items = [
-    (
-      icon: Icons.home_outlined,
-      activeIcon: Icons.home_rounded,
-      label: 'Home',
-    ),
+    (icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home'),
     (
       icon: Icons.person_outline_rounded,
       activeIcon: Icons.person_rounded,

@@ -1,4 +1,5 @@
 import 'package:batti_nala/core/error/error_response.dart';
+import 'package:batti_nala/features/auth/controllers/biometric_notifier.dart';
 import 'package:batti_nala/features/shared/models/user_model.dart';
 import 'package:batti_nala/core/services/storage_services.dart';
 import 'package:batti_nala/features/auth/controllers/auth_state.dart';
@@ -135,15 +136,79 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// LOGOUT
   Future<void> logout() async {
-    await _authRepository.logout();
-    await _storageServices.clearAll();
+    final email = state.email ?? '';
+    final hasBiometric = await _storageServices.hasBiometricForUser(email);
+    if (hasBiometric) {
+      // Refresh the stored token for this user before wiping the session,
+      // in case it was silently rotated since the user enabled biometric.
+      final currentToken = await _storageServices.getRefreshToken();
+      if (currentToken != null && email.isNotEmpty) {
+        await _storageServices.addBiometricAccount(email, currentToken);
+      }
+      await _storageServices.softLogout();
+    } else {
+      await _storageServices.clearAll();
+    }
     if (!mounted) return;
     state = AuthState();
 
-    // Invalidate providers to clear stale data
+    ref.invalidate(biometricNotifierProvider);
     ref.invalidate(profileNotifierProvider);
     ref.invalidate(dashboardProvider);
     ref.invalidate(employeeDashboardProvider);
+  }
+
+  /// BIOMETRIC LOGIN — loads the stored refresh token for [username], exchanges
+  /// it for a fresh access token, then updates the biometric map with the
+  /// new token so subsequent logins keep working.
+  Future<void> loginWithRefreshToken(String username) async {
+    state = state.copyWith(isLoading: true, clearErrorMessage: true);
+    try {
+      final storedToken =
+          await _storageServices.getRefreshTokenForBiometricUser(username);
+      if (storedToken == null) {
+        throw Exception('No biometric token found for $username');
+      }
+      // Temporarily place this user's token in the global slot so the
+      // repository's refreshToken() call picks it up.
+      await _storageServices.saveRefreshToken(storedToken);
+
+      final authResponse = await _authRepository.refreshToken();
+      final isVerified = await _storageServices.getIsVerified() ?? true;
+
+      // Persist the rotated refresh token back into the biometric map.
+      final newToken = await _storageServices.getRefreshToken();
+      if (newToken != null) {
+        await _storageServices.addBiometricAccount(username, newToken);
+      }
+
+      final role = authResponse.roleName.toLowerCase();
+      if (role != 'citizen' && role != 'staff') {
+        throw AuthError(detail: 'Login not allowed for $role role.');
+      }
+
+      final user = User(role: authResponse.roleName, isVerified: isVerified);
+
+      if (!mounted) return;
+      state = state.copyWith(user: user, isLoading: false, email: username);
+
+      if (role == 'citizen') {
+        await ref.read(dashboardProvider.notifier).refreshReports();
+      } else if (role == 'staff') {
+        await ref.read(employeeDashboardProvider.notifier).refreshReports();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      // Token expired — remove only this user's entry, leave others intact.
+      await _storageServices.removeBiometricAccount(username);
+      ref.invalidate(biometricNotifierProvider);
+      state = state.copyWith(isLoading: false, clearErrorMessage: true);
+      if (!mounted) return;
+      state = state.copyWith(
+        errorMessage:
+            'Your session has expired. Please sign in with your password.',
+      );
+    }
   }
 
   /// VERIFY USER
@@ -199,7 +264,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// SESSION RESTORE
+  /// SESSION RESTORE (called by biometric login after successful auth)
+  Future<void> restoreSession() => _loadUserFromStorage();
+
   Future<void> _loadUserFromStorage() async {
     try {
       final accessToken = await _storageServices.getAccessToken();

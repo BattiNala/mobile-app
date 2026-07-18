@@ -1,4 +1,6 @@
 import 'package:batti_nala/core/constants/colors.dart';
+import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
+import 'package:batti_nala/features/auth/controllers/biometric_notifier.dart';
 import 'package:batti_nala/features/citizen_dashboard/controllers/citizen_dashboard_notifier.dart';
 import 'package:batti_nala/features/shared/issue/models/issue_model.dart';
 import 'package:batti_nala/features/user-issue/view/widgets/issue_card_widget.dart';
@@ -6,6 +8,7 @@ import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
 import 'package:batti_nala/features/profile/view/profile_screen.dart';
 import 'package:batti_nala/features/shared/widgets/app_bottom_nav.dart';
 import 'package:batti_nala/features/shared/widgets/empty_state_widget.dart';
+import 'package:batti_nala/features/shared/widgets/biometric_setup_sheet.dart';
 import 'package:batti_nala/features/shared/widgets/logout_confirm_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,6 +28,31 @@ class _CitizenDashboardViewState extends ConsumerState<CitizenDashboardView> {
   String _searchQuery = '';
   String _statusFilter = 'all';
   final _searchController = SearchController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      // After a fresh password login, verify this device's biometric belongs
+      // to the current user. email is only populated after login(), not after
+      // a silent session restore — so we safely skip the check on app restarts.
+      final email = ref.read(authNotifierProvider).email ?? '';
+      if (email.isNotEmpty) {
+        await ref.read(biometricNotifierProvider.notifier).verifyForUser(email);
+      }
+      if (!mounted) return;
+      if (ref.read(biometricNotifierProvider).shouldPromptSetup) {
+        _showBiometricSetupDialog();
+      }
+    });
+  }
+
+  void _showBiometricSetupDialog() {
+    ref.read(biometricNotifierProvider.notifier).dismissSetupPrompt();
+    final username = ref.read(authNotifierProvider).email ?? '';
+    showBiometricSetupSheet(context, ref, username);
+  }
 
   static const _filters = [
     ('all', 'All'),
@@ -71,6 +99,14 @@ class _CitizenDashboardViewState extends ConsumerState<CitizenDashboardView> {
 
   @override
   Widget build(BuildContext context) {
+    // Catch the case where BiometricNotifier._init() finishes after mount.
+    ref.listen(
+      biometricNotifierProvider.select((s) => s.shouldPromptSetup),
+      (_, shouldPrompt) {
+        if (shouldPrompt && mounted) _showBiometricSetupDialog();
+      },
+    );
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final reports = ref.watch(dashboardProvider);
     final dashboardController = ref.read(dashboardProvider.notifier);
