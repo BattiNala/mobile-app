@@ -1,3 +1,4 @@
+import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/profile/model/profile_response_model.dart';
 import 'package:batti_nala/features/profile/view/profile_info_tile_widget.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ class ProfileInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final tiles = <Widget>[];
 
     if (citizen != null) {
@@ -87,8 +89,20 @@ class ProfileInfoSection extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? AppColors.darkSurface : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? AppColors.darkBorder : AppColors.border,
+        ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: AppColors.primaryBlue.withValues(alpha: 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(children: tiles),
     );

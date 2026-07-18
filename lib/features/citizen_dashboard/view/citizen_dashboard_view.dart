@@ -1,20 +1,78 @@
 import 'package:batti_nala/core/constants/colors.dart';
-import 'package:batti_nala/features/auth/controllers/auth_notifier.dart';
 import 'package:batti_nala/features/citizen_dashboard/controllers/citizen_dashboard_notifier.dart';
+import 'package:batti_nala/features/shared/issue/models/issue_model.dart';
 import 'package:batti_nala/features/user-issue/view/widgets/issue_card_widget.dart';
 import 'package:batti_nala/features/profile/controller/profile_notifer.dart';
+import 'package:batti_nala/features/profile/view/profile_screen.dart';
+import 'package:batti_nala/features/shared/widgets/app_bottom_nav.dart';
+import 'package:batti_nala/features/shared/widgets/empty_state_widget.dart';
+import 'package:batti_nala/features/shared/widgets/logout_confirm_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
-class CitizenDashboardView extends ConsumerWidget {
+class CitizenDashboardView extends ConsumerStatefulWidget {
   const CitizenDashboardView({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CitizenDashboardView> createState() =>
+      _CitizenDashboardViewState();
+}
+
+class _CitizenDashboardViewState extends ConsumerState<CitizenDashboardView> {
+  int _currentIndex = 0;
+  String _searchQuery = '';
+  String _statusFilter = 'all';
+  final _searchController = SearchController();
+
+  static const _filters = [
+    ('all', 'All'),
+    ('open', 'Open'),
+    ('in_progress', 'In Progress'),
+    ('resolved', 'Resolved'),
+  ];
+
+  List<IssueModel> _filteredIssues(List<IssueModel> issues) {
+    var result = issues.toList();
+    switch (_statusFilter) {
+      case 'open':
+        result = result
+            .where((i) =>
+                i.status.toUpperCase() == 'OPEN' ||
+                i.status.toUpperCase() == 'PENDING_VERIFICATION')
+            .toList();
+      case 'in_progress':
+        result = result
+            .where((i) => i.status.toUpperCase() == 'IN_PROGRESS')
+            .toList();
+      case 'resolved':
+        result = result
+            .where((i) => i.status.toUpperCase() == 'RESOLVED')
+            .toList();
+    }
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      result = result
+          .where((i) =>
+              i.issueType.toLowerCase().contains(q) ||
+              i.description.toLowerCase().contains(q) ||
+              i.issueLabel.toLowerCase().contains(q))
+          .toList();
+    }
+    return result;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final reports = ref.watch(dashboardProvider);
-    final authState = ref.watch(authNotifierProvider.notifier);
     final dashboardController = ref.read(dashboardProvider.notifier);
 
     final profileState = ref.watch(profileNotifierProvider);
@@ -27,8 +85,7 @@ class CitizenDashboardView extends ConsumerWidget {
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.logout_outlined, color: Colors.white),
-            onPressed: () =>
-                authState.logout(), // Call logout method from auth state
+            onPressed: () => showLogoutSheet(context, ref),
           ),
           centerTitle: true,
           title: const Text('Dashboard'),
@@ -227,19 +284,48 @@ class CitizenDashboardView extends ConsumerWidget {
       );
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'citizen_dashboard_add_issue',
-        backgroundColor: Colors.red.shade600,
-        onPressed: () async {
-          await context.push('/issue-create');
-          await dashboardController.refreshReports();
-        },
-        child: const Icon(Icons.add, size: 30, color: Colors.white),
+    final navItems = [
+      const NavItem(
+        icon: Icons.home_outlined,
+        activeIcon: Icons.home_rounded,
+        label: 'Home',
       ),
+      const NavItem(
+        icon: Icons.person_outline_rounded,
+        activeIcon: Icons.person_rounded,
+        label: 'Profile',
+      ),
+    ];
 
-      body: RefreshIndicator(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton(
+              heroTag: 'citizen_dashboard_add_issue',
+              backgroundColor: Colors.red.shade600,
+              onPressed: () async {
+                await context.push('/issue-create');
+                await dashboardController.refreshReports();
+              },
+              child: const Icon(Icons.add, size: 30, color: Colors.white),
+            )
+          : null,
+      bottomNavigationBar: AppBottomNav(
+        currentIndex: _currentIndex,
+        onTap: (i) => setState(() => _currentIndex = i),
+        items: navItems,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? AppColors.darkScreenGradient
+              : AppColors.screenGradient,
+        ),
+        child: IndexedStack(
+        index: _currentIndex,
+        children: [
+          // Tab 0: Dashboard
+          RefreshIndicator(
         onRefresh: () async {
           // Refresh both dashboard reports and profile
           await Future.wait([
@@ -310,17 +396,6 @@ class CitizenDashboardView extends ConsumerWidget {
                                     ),
                                   ],
                                 ),
-                                CircleAvatar(
-                                  radius: 22,
-                                  backgroundColor: Colors.white24,
-                                  child: GestureDetector(
-                                    onTap: () => context.push('/profile'),
-                                    child: const Icon(
-                                      Icons.person,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
                               ],
                             ),
 
@@ -360,96 +435,164 @@ class CitizenDashboardView extends ConsumerWidget {
             /// REPORT LIST
             SliverSafeArea(
               top: false,
-              sliver: SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    /// Title Row
-                    Row(
-                      children: [
-                        const Text(
-                          'Your Reports',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
+              sliver: SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // Search bar
+                    SearchBar(
+                      controller: _searchController,
+                      hintText: 'Search your reports...',
+                      leading: const Icon(Icons.search_rounded, size: 20),
+                      trailing: [
+                        if (_searchQuery.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 18),
+                            onPressed: () => setState(() {
+                              _searchQuery = '';
+                              _searchController.clear();
+                            }),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Container(
-                            height: 2,
-                            color: Colors.blue.withValues(alpha: 0.2),
-                          ),
-                        ),
                       ],
-                    ),
-
-                    const SizedBox(height: 8),
-                    if (reports.isEmpty) ...[
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 64.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.assignment_outlined,
-                                size: 80,
-                                color: Colors.grey.shade300,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No reports found',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Tap + to report an issue',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade500,
-                                ),
-                              ),
-                            ],
-                          ),
+                      onChanged: (v) => setState(() => _searchQuery = v),
+                      elevation: const WidgetStatePropertyAll(0),
+                      backgroundColor: WidgetStatePropertyAll(
+                        isDark
+                            ? AppColors.darkSurface
+                            : Colors.white.withValues(alpha: 0.9),
+                      ),
+                      side: WidgetStatePropertyAll(
+                        BorderSide(
+                          color: isDark
+                              ? AppColors.darkBorder
+                              : AppColors.border,
                         ),
                       ),
-                    ] else ...[
-                      /// Reports List
+                      shape: const WidgetStatePropertyAll(
+                        RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.all(Radius.circular(14)),
+                        ),
+                      ),
+                      padding: const WidgetStatePropertyAll(
+                        EdgeInsets.symmetric(horizontal: 14),
+                      ),
+                      textStyle: WidgetStatePropertyAll(
+                        TextStyle(
+                          fontSize: 14,
+                          color: isDark
+                              ? AppColors.darkTextMain
+                              : AppColors.textMain,
+                        ),
+                      ),
+                      hintStyle: WidgetStatePropertyAll(
+                        TextStyle(
+                          fontSize: 14,
+                          color: isDark
+                              ? AppColors.darkTextSecondary
+                              : AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // Filter chips
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: _filters.map(
+                          ((String, String) f) {
+                            final isSelected = _statusFilter == f.$1;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: FilterChip(
+                                label: Text(f.$2),
+                                selected: isSelected,
+                                onSelected: (_) =>
+                                    setState(() => _statusFilter = f.$1),
+                                backgroundColor: isDark
+                                    ? AppColors.darkSurface2
+                                    : const Color(0xFFEEF2FF),
+                                selectedColor: AppColors.primaryBlue
+                                    .withValues(alpha: 0.15),
+                                labelStyle: TextStyle(
+                                  color: isSelected
+                                      ? AppColors.primaryBlue
+                                      : (isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.textSecondary),
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  fontSize: 13,
+                                ),
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? AppColors.primaryBlue
+                                          .withValues(alpha: 0.5)
+                                      : (isDark
+                                          ? AppColors.darkBorder
+                                          : AppColors.border),
+                                  width: isSelected ? 1.5 : 1,
+                                ),
+                                showCheckmark: false,
+                              ),
+                            );
+                          },
+                        ).toList(),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    if (_filteredIssues(reports).isEmpty)
+                      EmptyStateWidget(
+                        title: _searchQuery.isNotEmpty ||
+                                _statusFilter != 'all'
+                            ? 'No Matches'
+                            : 'No Reports Yet',
+                        subtitle: _searchQuery.isNotEmpty ||
+                                _statusFilter != 'all'
+                            ? 'Try a different search or filter.'
+                            : 'Tap + to report a civic issue.',
+                        icon: _searchQuery.isNotEmpty ||
+                                _statusFilter != 'all'
+                            ? Icons.search_off_rounded
+                            : Icons.assignment_outlined,
+                      )
+                    else
                       ListView.separated(
                         physics: const NeverScrollableScrollPhysics(),
                         shrinkWrap: true,
                         padding: EdgeInsets.zero,
-                        itemCount: reports.length,
-                        separatorBuilder: (context, index) =>
+                        itemCount: _filteredIssues(reports).length,
+                        separatorBuilder: (_, __) =>
                             const SizedBox(height: 11),
                         itemBuilder: (context, index) {
-                          final report = reports[index];
+                          final report = _filteredIssues(reports)[index];
                           return InkWell(
                             onTap: () async {
                               await context.push(
-                                '/issue-detail/${report.issueLabel}',
-                              );
+                                  '/issue-detail/${report.issueLabel}');
                               dashboardController.refreshReports();
                             },
                             child: IssueCardWidget(issue: report),
                           );
                         },
                       ),
-                    ],
-                  ],
+                  ]),
                 ),
               ),
             ),
-          ),
           ],
         ),
+      ),
+
+          // Tab 1: Profile
+          const ProfileScreen(),
+        ],
+      ),
       ),
     );
   }

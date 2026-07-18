@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/core/services/geocoding_service.dart';
 import 'package:batti_nala/core/services/location_service.dart';
@@ -11,31 +13,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
-/// Main location selection interface with buttons for current location or map picker
+// ─── Location Picker (buttons) ───────────────────────────────────────────────
+
 class LocationPicker extends ConsumerWidget {
   const LocationPicker({super.key});
 
   Future<void> _openMapPicker(BuildContext context, WidgetRef ref) async {
     final locationState = ref.read(locationNotifierProvider);
-
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => MapPicker(
-          initialLat: locationState.latitude == 0
-              ? null
-              : locationState.latitude,
-          initialLng: locationState.longitude == 0
-              ? null
-              : locationState.longitude,
+          initialLat: locationState.latitude == 0 ? null : locationState.latitude,
+          initialLng: locationState.longitude == 0 ? null : locationState.longitude,
           onLocationSelected: (lat, lng, address) {
-            ref
-                .read(locationNotifierProvider.notifier)
-                .setMapLocation(
-                  address: address,
-                  latitude: lat,
-                  longitude: lng,
-                );
+            ref.read(locationNotifierProvider.notifier).setMapLocation(
+              address: address,
+              latitude: lat,
+              longitude: lng,
+            );
           },
         ),
       ),
@@ -53,11 +49,9 @@ class LocationPicker extends ConsumerWidget {
           children: [
             Expanded(
               child: ActionButton(
-                label: locationState.isLoading
-                    ? 'Getting location...'
-                    : 'Current',
-                iconPath: Icons.my_location,
-                backgroundColor: Colors.blue,
+                label: locationState.isLoading ? 'Getting…' : 'Current',
+                iconPath: Icons.my_location_rounded,
+                backgroundColor: AppColors.primaryBlue,
                 textColor: Colors.white,
                 onPressed: locationState.isLoading
                     ? null
@@ -71,12 +65,12 @@ class LocationPicker extends ConsumerWidget {
             Expanded(
               child: ActionButton(
                 label: 'Pick on Map',
-                iconPath: Icons.location_on_outlined,
+                iconPath: Icons.map_rounded,
+                backgroundColor: AppColors.adminRed,
+                textColor: Colors.white,
                 onPressed: locationState.isLoading
                     ? null
                     : () => _openMapPicker(context, ref),
-                backgroundColor: AppColors.primaryBlue,
-                textColor: AppColors.adminRedLight,
               ),
             ),
           ],
@@ -121,7 +115,8 @@ class LocationPicker extends ConsumerWidget {
   }
 }
 
-/// Interactive map picker widget for selecting location on map
+// ─── Map Picker ───────────────────────────────────────────────────────────────
+
 class MapPicker extends ConsumerStatefulWidget {
   final Function(double lat, double lng, String address) onLocationSelected;
   final double? initialLat;
@@ -146,16 +141,12 @@ class _MapPickerState extends ConsumerState<MapPicker> {
   String _address = '';
   late final LocationService _locationService;
 
-  // Search related
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
   List<Map<String, dynamic>> _searchResults = [];
   final FocusNode _searchFocusNode = FocusNode();
 
-  // Default center (Kathmandu)
   static const LatLng _defaultLocation = LatLng(27.7172, 85.3240);
-
-  // Zoom level
   double _currentZoom = 15;
 
   @override
@@ -201,16 +192,13 @@ class _MapPickerState extends ConsumerState<MapPicker> {
             Icon(Icons.location_off, color: Colors.red),
             SizedBox(width: 12),
             Expanded(
-              child: Text(
-                'Location Access Denied',
-                style: TextStyle(fontSize: 18),
-              ),
+              child: Text('Location Access Denied', style: TextStyle(fontSize: 18)),
             ),
           ],
         ),
         content: const Text(
-          'It seems location permissions are permanently denied. '
-          'To use auto-location, please enable it in system settings, ',
+          'Location permissions are permanently denied. '
+          'Enable them in system settings to use auto-location.',
         ),
         actions: [
           ActionButton(
@@ -232,7 +220,6 @@ class _MapPickerState extends ConsumerState<MapPicker> {
       _isLoading = true;
       _errorMessage = null;
     });
-
     try {
       final coords = await _locationService.getCurrentCoordinates(
         timeLimit: const Duration(seconds: 10),
@@ -246,21 +233,16 @@ class _MapPickerState extends ConsumerState<MapPicker> {
       });
       await _updateAddressFromCoordinates(coords.latitude, coords.longitude);
     } catch (e) {
-      debugPrint('[MAP] Error getting location: $e');
       if (!mounted) return;
-
       setState(() => _isLoading = false);
-
       if (e.toString().contains('PERMISSION_DENIED_FOREVER')) {
         _showPermissionDialog();
       } else {
-        String message = 'Could not get location. Try manual selection.';
-        if (e.toString().contains('Location services are disabled')) {
-          message = 'Please enable GPS/Location services.';
-        }
-        setState(() => _errorMessage = message);
+        setState(() => _errorMessage =
+            e.toString().contains('Location services are disabled')
+                ? 'Please enable GPS / Location services.'
+                : 'Could not get location. Try manual selection.');
       }
-
       await _updateAddressFromCoordinates(
         _selectedLocation.latitude,
         _selectedLocation.longitude,
@@ -269,58 +251,51 @@ class _MapPickerState extends ConsumerState<MapPicker> {
   }
 
   Future<void> _searchLocation(String query) async {
-    if (query.isEmpty) return;
-
+    if (query.isEmpty) {
+      setState(() => _searchResults = []);
+      return;
+    }
     setState(() {
       _isSearching = true;
       _searchResults = [];
     });
-
     try {
       final response = await Dio().get(
         'https://nominatim.openstreetmap.org/search',
         queryParameters: {
-          'q': '$query, Kathmandu, Nepal',
+          'q': '$query, Nepal',
           'format': 'json',
-          'limit': 10,
+          'limit': 8,
           'addressdetails': 1,
         },
         options: Options(headers: {'User-Agent': 'BattiNala/1.0'}),
       );
-
       if (response.statusCode == 200 && response.data != null) {
         final List results = response.data;
         setState(() {
           _searchResults = results
-              .map(
-                (item) => {
-                  'display_name': item['display_name'],
-                  'lat': double.parse(item['lat']),
-                  'lon': double.parse(item['lon']),
-                },
-              )
+              .map((item) => {
+                    'display_name': item['display_name'],
+                    'lat': double.parse(item['lat']),
+                    'lon': double.parse(item['lon']),
+                  })
               .toList();
           _isSearching = false;
         });
       }
     } catch (e) {
-      debugPrint('[SEARCH] Error: $e');
-      setState(() {
-        _isSearching = false;
-      });
+      setState(() => _isSearching = false);
     }
   }
 
   void _selectSearchResult(Map<String, dynamic> result) {
     final lat = result['lat'] as double;
     final lng = result['lon'] as double;
-    final name = result['display_name'] as String;
-
     setState(() {
       _selectedLocation = LatLng(lat, lng);
       _mapController.move(_selectedLocation, 16);
       _currentZoom = 16;
-      _address = name;
+      _address = result['display_name'] as String;
       _searchController.clear();
       _searchResults = [];
       _searchFocusNode.unfocus();
@@ -361,61 +336,14 @@ class _MapPickerState extends ConsumerState<MapPicker> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Select Location on Map',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: AppColors.primaryBlue,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: TextField(
-                controller: _searchController,
-                focusNode: _searchFocusNode,
-                onChanged: _searchLocation,
-                decoration: InputDecoration(
-                  hintText: 'Search for a location...',
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 20),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchResults = []);
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // Map
+          // ── Map ───────────────────────────────────────────────────────────
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
@@ -433,297 +361,637 @@ class _MapPickerState extends ConsumerState<MapPicker> {
                 userAgentPackageName: 'com.example.batti_nala',
                 tileProvider: NetworkTileProvider(),
               ),
-              // Marker at selected location
               MarkerLayer(
                 markers: [
                   Marker(
-                    width: 50,
-                    height: 50,
+                    width: 48,
+                    height: 56,
                     point: _selectedLocation,
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            boxShadow: [
-                              const BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 4,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.location_on,
-                            color: Colors.red,
-                            size: 24,
-                          ),
-                        ),
-                        Container(
-                          width: 0,
-                          height: 0,
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(color: Colors.transparent),
-                              top: BorderSide(color: Colors.red, width: 8),
-                              left: BorderSide(
-                                color: Colors.transparent,
-                                width: 6,
-                              ),
-                              right: BorderSide(
-                                color: Colors.transparent,
-                                width: 6,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: const _PinMarker(),
                   ),
                 ],
               ),
             ],
           ),
 
-          // Zoom Controls
+          // ── Glass top bar ─────────────────────────────────────────────────
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Container(
+                  color: isDark
+                      ? AppColors.darkBackground.withValues(alpha: 0.75)
+                      : Colors.white.withValues(alpha: 0.82),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    MediaQuery.of(context).padding.top + 8,
+                    16,
+                    12,
+                  ),
+                  child: Column(
+                    children: [
+                      // Back + title
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.white.withValues(alpha: 0.1)
+                                    : AppColors.primaryBlue.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.15)
+                                      : AppColors.border,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                size: 16,
+                                color: isDark
+                                    ? AppColors.darkTextMain
+                                    : AppColors.primaryBlue,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Pick Location',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: isDark
+                                        ? AppColors.darkTextMain
+                                        : AppColors.textMain,
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                Text(
+                                  'Tap map or search to set location',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // My location button
+                          GestureDetector(
+                            onTap: _getCurrentLocation,
+                            child: Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryBlue.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.primaryBlue.withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.my_location_rounded,
+                                size: 18,
+                                color: AppColors.primaryBlue,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      // Search bar
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.darkSurface2.withValues(alpha: 0.7)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.darkBorder
+                                : AppColors.border,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          focusNode: _searchFocusNode,
+                          onChanged: _searchLocation,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark
+                                ? AppColors.darkTextMain
+                                : AppColors.textMain,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'Search for a location…',
+                            hintStyle: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textMuted,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textMuted,
+                              size: 20,
+                            ),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? GestureDetector(
+                                    onTap: () {
+                                      _searchController.clear();
+                                      setState(() => _searchResults = []);
+                                    },
+                                    child: Icon(
+                                      Icons.close_rounded,
+                                      size: 18,
+                                      color: isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.textMuted,
+                                    ),
+                                  )
+                                : null,
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // ── Search results ────────────────────────────────────────────────
+          if (_searchResults.isNotEmpty || _isSearching)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 130,
+              left: 16,
+              right: 16,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: BackdropFilter(
+                  filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    constraints: const BoxConstraints(maxHeight: 260),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.darkSurface.withValues(alpha: 0.95)
+                          : Colors.white.withValues(alpha: 0.97),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : AppColors.border,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 20,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: _isSearching
+                        ? Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primaryBlue,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  'Searching…',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.textMuted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            itemCount: _searchResults.length,
+                            separatorBuilder: (_, __) => Divider(
+                              height: 1,
+                              color: isDark
+                                  ? AppColors.darkBorder
+                                  : AppColors.border,
+                            ),
+                            itemBuilder: (context, index) {
+                              final result = _searchResults[index];
+                              return InkWell(
+                                onTap: () => _selectSearchResult(result),
+                                borderRadius: BorderRadius.circular(8),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 10,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.adminRed
+                                              .withValues(alpha: 0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                          Icons.location_on_rounded,
+                                          color: AppColors.adminRed,
+                                          size: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          result['display_name'],
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: isDark
+                                                ? AppColors.darkTextMain
+                                                : AppColors.textMain,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Zoom controls ─────────────────────────────────────────────────
           Positioned(
             right: 16,
-            top: MediaQuery.of(context).size.height / 2 - 60,
+            bottom: 160,
             child: Column(
               children: [
-                FloatingActionButton.small(
-                  onPressed: _zoomIn,
-                  heroTag: 'map_picker_zoom_in',
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.blue,
-                  child: const Icon(Icons.add),
+                _GlassButton(
+                  onTap: _zoomIn,
+                  isDark: isDark,
+                  child: const Icon(
+                    Icons.add_rounded,
+                    size: 20,
+                    color: AppColors.primaryBlue,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                FloatingActionButton.small(
-                  onPressed: _zoomOut,
-                  heroTag: 'map_picker_zoom_out',
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.blue,
-                  child: const Icon(Icons.remove),
+                _GlassButton(
+                  onTap: _zoomOut,
+                  isDark: isDark,
+                  child: const Icon(
+                    Icons.remove_rounded,
+                    size: 20,
+                    color: AppColors.primaryBlue,
+                  ),
                 ),
               ],
             ),
           ),
 
-          // Search Results Dropdown
-          if (_searchResults.isNotEmpty)
-            Positioned(
-              top: kToolbarHeight + 70,
-              left: 16,
-              right: 16,
-              child: Container(
-                constraints: const BoxConstraints(maxHeight: 300),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    const BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: _searchResults.length,
-                  itemBuilder: (context, index) {
-                    final result = _searchResults[index];
-                    return ListTile(
-                      leading: const Icon(
-                        Icons.location_pin,
-                        color: Colors.red,
-                      ),
-                      title: Text(
-                        result['display_name'],
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 13),
-                      ),
-                      onTap: () => _selectSearchResult(result),
-                    );
-                  },
-                ),
-              ),
-            ),
-
-          // Loading indicator for search
-          if (_isSearching)
-            const Positioned(
-              top: kToolbarHeight + 70,
-              left: 16,
-              right: 16,
-              child: Center(
-                child: Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                        SizedBox(width: 12),
-                        Text('Searching...'),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-          // Center crosshair
-          IgnorePointer(
-            child: Center(
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.red, width: 2),
-                ),
-                child: const Icon(Icons.add, color: Colors.red, size: 20),
-              ),
-            ),
-          ),
-
-          // Loading indicator
-          if (_isLoading)
-            Container(
-              color: Colors.black54,
-              child: const Center(child: CircularProgressIndicator()),
-            ),
-
-          // Bottom card with location info
+          // ── Bottom card ───────────────────────────────────────────────────
           Positioned(
-            bottom: 20,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  const BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.location_on, size: 18, color: Colors.blue),
-                      SizedBox(width: 6),
-                      Text(
-                        'Selected Location',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.darkSurface.withValues(alpha: 0.92)
+                        : Colors.white.withValues(alpha: 0.93),
+                    border: Border(
+                      top: BorderSide(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.07)
+                            : AppColors.border,
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _address.isNotEmpty
-                        ? _address
-                        : 'Tap on map or search for a location',
-                    style: const TextStyle(fontSize: 13),
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: _getCurrentLocation,
-                        icon: const Icon(Icons.my_location),
-                        tooltip: 'My Location',
-                        color: Colors.blue,
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryBlue
+                                      .withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.location_on_rounded,
+                                  color: AppColors.primaryBlue,
+                                  size: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _address.isNotEmpty
+                                      ? _address
+                                      : 'Tap on the map to set location',
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    height: 1.4,
+                                    color: isDark
+                                        ? AppColors.darkTextMain
+                                        : AppColors.textMain,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          ActionButton(
+                            width: double.infinity,
+                            label: 'Confirm Location',
+                            iconPath: Icons.check_rounded,
+                            backgroundColor: AppColors.primaryBlue,
+                            textColor: Colors.white,
+                            onPressed: _confirmLocation,
+                            borderRadius: 14,
+                            verticalPadding: 14,
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      ActionButton(
-                        label: 'Confirm Location',
-                        onPressed: _confirmLocation,
-                        backgroundColor: AppColors.primaryBlue,
-                        textColor: Colors.white,
-                      ),
-                    ],
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
           ),
 
-          // Error Message Banner
+          // ── Error banner ──────────────────────────────────────────────────
           if (_errorMessage != null)
             Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.adminRed,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.error_outline_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.close,
+              top: MediaQuery.of(context).padding.top + 120,
+              left: 16,
+              right: 16,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.adminRed.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.error_outline_rounded,
                         color: Colors.white,
                         size: 18,
                       ),
-                      onPressed: () => setState(() => _errorMessage = null),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _errorMessage!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => setState(() => _errorMessage = null),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // ── Loading overlay ───────────────────────────────────────────────
+          if (_isLoading)
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  child: Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ui.ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 24,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.darkSurface.withValues(alpha: 0.92)
+                                : Colors.white.withValues(alpha: 0.92),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isDark
+                                  ? Colors.white.withValues(alpha: 0.1)
+                                  : AppColors.border,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                strokeWidth: 3,
+                                color: AppColors.primaryBlue,
+                              ),
+                              const SizedBox(height: 14),
+                              Text(
+                                'Getting your location…',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark
+                                      ? AppColors.darkTextMain
+                                      : AppColors.textMain,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Pin marker ───────────────────────────────────────────────────────────────
+
+class _PinMarker extends StatelessWidget {
+  const _PinMarker();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: AppColors.adminRed,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2.5),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.adminRed.withValues(alpha: 0.45),
+                blurRadius: 12,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.location_on_rounded,
+            color: Colors.white,
+            size: 18,
+          ),
+        ),
+        CustomPaint(
+          size: const Size(12, 8),
+          painter: _PinTailPainter(),
+        ),
+      ],
+    );
+  }
+}
+
+class _PinTailPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.adminRed
+      ..style = PaintingStyle.fill;
+    final path = ui.Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..lineTo(size.width, 0)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_PinTailPainter old) => false;
+}
+
+// ─── Glass button ─────────────────────────────────────────────────────────────
+
+class _GlassButton extends StatelessWidget {
+  final VoidCallback onTap;
+  final Widget child;
+  final bool isDark;
+
+  const _GlassButton({
+    required this.onTap,
+    required this.child,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.darkSurface.withValues(alpha: 0.85)
+                  : Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : AppColors.border,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Center(child: child),
+          ),
+        ),
       ),
     );
   }

@@ -1,17 +1,18 @@
 import 'dart:async';
-import 'package:batti_nala/core/services/snackbar_services.dart';
-import 'package:batti_nala/core/services/location_service.dart';
-import 'package:batti_nala/features/shared/widgets/action_button.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
+import 'dart:ui';
+
 import 'package:batti_nala/core/constants/colors.dart';
+import 'package:batti_nala/core/services/location_service.dart';
+import 'package:batti_nala/core/services/snackbar_services.dart';
+import 'package:batti_nala/features/shared/issue/models/issue_model.dart';
+import 'package:batti_nala/features/shared/widgets/action_button.dart';
 import 'package:batti_nala/features/staff-issue/model/route_model.dart';
 import 'package:batti_nala/features/staff-issue/repository/route_repository.dart';
-import 'package:batti_nala/features/shared/issue/models/issue_model.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 
 class MissionMapView extends ConsumerStatefulWidget {
   final IssueModel issue;
@@ -308,236 +309,590 @@ class _MissionMapViewState extends ConsumerState<MissionMapView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Live Navigation'),
-        backgroundColor: AppColors.primaryBlue900,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _fetchRoute,
-            tooltip: 'Manual Reroute',
-          ),
-        ],
-      ),
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
+          // ── Map ──────────────────────────────────────
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter:
-                  _currentLatLng ??
+              initialCenter: _currentLatLng ??
                   LatLng(widget.issue.latitude, widget.issue.longitude),
               initialZoom: 15,
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate:
+                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.battinala.app',
               ),
               if (_route != null)
                 PolylineLayer(
                   polylines: [
-                    // Main routed path on roads
+                    // Shadow stroke for depth
                     Polyline(
                       points: _route!.path,
-                      color: AppColors.primaryBlue,
+                      color: AppColors.primaryBlue950.withValues(alpha: 0.4),
+                      strokeWidth: 11,
+                    ),
+                    // Main route
+                    Polyline(
+                      points: _route!.path,
+                      color: AppColors.primaryBlue800,
                       strokeWidth: 7,
                     ),
-
-                    // "Off-road" connecting line if road ends early
+                    // Off-road dotted tail
                     Polyline(
                       points: [
                         _route!.path.last,
-                        LatLng(widget.issue.latitude, widget.issue.longitude),
+                        LatLng(
+                          widget.issue.latitude,
+                          widget.issue.longitude,
+                        ),
                       ],
-                      color: AppColors.primaryBlue.withValues(alpha: 0.6),
+                      color: AppColors.adminRed.withValues(alpha: 0.7),
                       strokeWidth: 4,
                       isDotted: true,
                     ),
                   ],
                 ),
-              // Issue location marker
               MarkerLayer(
                 markers: [
+                  // Destination marker
                   Marker(
                     point: LatLng(
                       widget.issue.latitude,
                       widget.issue.longitude,
                     ),
-                    width: 60,
-                    height: 60,
-                    child: const FaIcon(
-                      FontAwesomeIcons.signsPost,
-                      color: AppColors.primaryBlue800,
-                      size: 45,
+                    width: 56,
+                    height: 56,
+                    child: _DestinationMarker(
+                      issueType: widget.issue.issueType,
                     ),
                   ),
+                  // Current location marker
                   if (_currentLatLng != null)
                     Marker(
                       point: _currentLatLng!,
-                      width: 45,
-                      height: 45,
-                      child: _buildCurrentLocationMarker(),
+                      width: 52,
+                      height: 52,
+                      child: const _CurrentLocationMarker(),
                     ),
                 ],
               ),
             ],
           ),
 
-          // TOP ACTION HUB
+          // ── Top bar ──────────────────────────────────
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildTopBar(context),
+          ),
+
+          // ── Instruction panel (navigating only) ──────
           if (_isNavigating)
             Positioned(
-              top: 20,
+              top: 110,
               left: 16,
               right: 16,
               child: _buildInstructionPanel(),
             ),
 
-          // BOTTOM CONTROL BAR
+          // ── Bottom control bar ────────────────────────
           Positioned(
-            bottom: 24,
-            left: 16,
-            right: 16,
+            bottom: 0,
+            left: 0,
+            right: 0,
             child: _buildControlBar(),
           ),
 
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
+          // ── Loading & error overlays ──────────────────
+          if (_isLoading)
+            Container(
+              color: Colors.black.withValues(alpha: 0.5),
+              child: const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+            ),
           if (_error != null) _buildErrorOverlay(),
         ],
       ),
     );
   }
 
-  Widget _buildControlBar() {
-    // Calculate remaining distance dynamically when navigating
-    final double displayDistance = _isNavigating && _currentLatLng != null
-        ? _calculateRemainingDistance()
-        : (_route?.distanceKm ?? 0.0);
-
-    return Card(
-      elevation: 10,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  _isNavigating ? 'Remaining' : 'Total Distance',
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
-                ),
-                Text(
-                  '${displayDistance.toStringAsFixed(1)} KM',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+  Widget _buildTopBar(BuildContext context) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.primaryBlue900.withValues(alpha: 0.88),
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+          ),
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 16, 12),
+              child: Row(
+                children: [
+                  // Back button
+                  ClipOval(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Live Navigation',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          widget.issue.issueType.toUpperCase(),
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 11,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Reroute button
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.refresh_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          onPressed: _fetchRoute,
+                          tooltip: 'Reroute',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const Spacer(),
-            ActionButton(
-              label: _isNavigating ? 'STOP' : 'START',
-              backgroundColor: _isNavigating
-                  ? AppColors.adminRed
-                  : AppColors.primaryBlue,
-              width: 140,
-              onPressed: _isNavigating ? _onStopNavigation : _onStartNavigation,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildInstructionPanel() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.primaryBlue.withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 10)],
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.navigation_rounded, color: Colors.white, size: 30),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _hintText,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.primaryBlue900.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.15),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryBlue.withValues(alpha: 0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
               ),
-            ),
+            ],
           ),
-          IconButton(
-            icon: Icon(
-              _isAutoFollow ? Icons.near_me : Icons.near_me_disabled,
-              color: Colors.white,
-              size: 20,
-            ),
-            onPressed: () => setState(() => _isAutoFollow = !_isAutoFollow),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.navigation_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  _hintText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () => setState(() => _isAutoFollow = !_isAutoFollow),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _isAutoFollow
+                        ? Colors.white.withValues(alpha: 0.2)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Icon(
+                    _isAutoFollow
+                        ? Icons.near_me_rounded
+                        : Icons.near_me_disabled_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildCurrentLocationMarker() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.primaryBlue, width: 4),
-        boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
-      ),
-      child: const Center(
-        child: Icon(
-          Icons.person_pin_circle_rounded,
-          color: AppColors.primaryBlue,
-          size: 24,
+  Widget _buildControlBar() {
+    final double displayDistance = _isNavigating && _currentLatLng != null
+        ? _calculateRemainingDistance()
+        : (_route?.distanceKm ?? 0.0);
+
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.92),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+              child: Row(
+                children: [
+                  // Distance info
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _isNavigating ? 'Remaining' : 'Total Distance',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            displayDistance.toStringAsFixed(1),
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textMain,
+                              letterSpacing: -1,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'km',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  // Start/Stop button
+                  GestureDetector(
+                    onTap: _isNavigating
+                        ? _onStopNavigation
+                        : _onStartNavigation,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 28,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isNavigating
+                            ? AppColors.adminRed
+                            : AppColors.primaryBlue,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_isNavigating
+                                    ? AppColors.adminRed
+                                    : AppColors.primaryBlue)
+                                .withValues(alpha: 0.4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isNavigating
+                                ? Icons.stop_rounded
+                                : Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _isNavigating ? 'Stop' : 'Start',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
   Widget _buildErrorOverlay() {
-    return Container(
-      color: Colors.white.withValues(alpha: 0.9),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.location_off_rounded,
-                color: Colors.red,
-                size: 60,
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.6),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.adminRed.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.location_off_rounded,
+                            color: AppColors.adminRed,
+                            size: 48,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Location Unavailable',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textMain,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          _error!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ActionButton(
+                          label: 'Retry',
+                          onPressed: _initInitialState,
+                          backgroundColor: AppColors.primaryBlue,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'Could not access current location.',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 24),
-              ActionButton(label: 'Retry', onPressed: _initInitialState),
-            ],
+            ),
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─── Map markers ─────────────────────────────────────────────────────────────
+
+class _DestinationMarker extends StatelessWidget {
+  final String issueType;
+  const _DestinationMarker({required this.issueType});
+
+  @override
+  Widget build(BuildContext context) {
+    final typeLower = issueType.toLowerCase();
+    final isElectricity = typeLower.contains('electricity');
+    final isSewage =
+        typeLower.contains('sewage') || typeLower.contains('drain');
+    final color = isElectricity
+        ? AppColors.primaryBlue
+        : isSewage
+            ? const Color(0xFF059669)
+            : AppColors.adminRed;
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Outer glow
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withValues(alpha: 0.18),
+          ),
+        ),
+        // Icon container
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 2.5),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.5),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.location_on_rounded,
+            color: Colors.white,
+            size: 18,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CurrentLocationMarker extends StatelessWidget {
+  const _CurrentLocationMarker();
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Pulse ring
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primaryBlue.withValues(alpha: 0.15),
+          ),
+        ),
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.primaryBlue.withValues(alpha: 0.25),
+          ),
+        ),
+        // Core dot
+        Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: AppColors.primaryBlue,
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryBlue.withValues(alpha: 0.5),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -10,6 +10,10 @@ class InputLabelWidget extends ConsumerWidget {
   final TextCapitalization? textCapitalization;
   final TextInputType? inputType;
   final bool isPassword;
+
+  /// When true the widget renders white-on-glass text for gradient backgrounds.
+  final bool isGlass;
+
   final String? Function(String?)? validator;
   final void Function(String) onChanged;
   final TextEditingController? controller;
@@ -25,21 +29,35 @@ class InputLabelWidget extends ConsumerWidget {
     this.validator,
     this.textCapitalization = TextCapitalization.none,
     this.isPassword = false,
+    this.isGlass = false,
     this.controller,
     this.autofillHints,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final labelColor = isGlass ? Colors.white : AppColors.textMain;
+    final iconColor = isGlass ? Colors.white60 : Colors.grey;
+    final fillColor = isGlass
+        ? Colors.white.withValues(alpha: 0.12)
+        : AppColors.background;
+    final borderColor = isGlass
+        ? Colors.white.withValues(alpha: 0.25)
+        : AppColors.border;
+    final focusedBorderColor =
+        isGlass ? Colors.white : AppColors.primaryBlue;
+    final textColor = isGlass ? Colors.white : AppColors.textMain;
+    final hintColor = isGlass ? Colors.white38 : AppColors.textMuted;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 16,
+          style: TextStyle(
+            fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: AppColors.textMain,
+            color: labelColor,
           ),
         ),
         const SizedBox(height: 8),
@@ -48,16 +66,22 @@ class InputLabelWidget extends ConsumerWidget {
           controller: controller,
           validator: validator,
           keyboardType: inputType,
+          style: TextStyle(color: textColor),
           obscureText: isPassword
               ? (label.toLowerCase().contains('confirm')
-                    ? ref.watch(authNotifierProvider).isConfirmPasswordObscured
+                    ? ref
+                          .watch(authNotifierProvider)
+                          .isConfirmPasswordObscured
                     : ref.watch(authNotifierProvider).isPasswordObscured)
               : false,
           onChanged: onChanged,
           textCapitalization: textCapitalization!,
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: Icon(icon, color: Colors.grey),
+            hintStyle: TextStyle(color: hintColor),
+            filled: true,
+            fillColor: fillColor,
+            prefixIcon: Icon(icon, color: iconColor, size: 18),
             suffixIcon: isPassword
                 ? IconButton(
                     onPressed: () {
@@ -71,28 +95,47 @@ class InputLabelWidget extends ConsumerWidget {
                             .togglePasswordVisibility();
                       }
                     },
-                    icon:
-                        (label.toLowerCase().contains('confirm')
-                            ? ref
-                                  .watch(authNotifierProvider)
-                                  .isConfirmPasswordObscured
-                            : ref
-                                  .watch(authNotifierProvider)
-                                  .isPasswordObscured)
-                        ? const Icon(Icons.visibility_off, color: Colors.grey)
-                        : const Icon(Icons.visibility, color: Colors.grey),
+                    icon: Icon(
+                      (label.toLowerCase().contains('confirm')
+                              ? ref
+                                    .watch(authNotifierProvider)
+                                    .isConfirmPasswordObscured
+                              : ref
+                                    .watch(authNotifierProvider)
+                                    .isPasswordObscured)
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: iconColor,
+                      size: 20,
+                    ),
                   )
                 : null,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: borderColor),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: borderColor),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: focusedBorderColor, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.adminRed),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(
-                color: AppColors.primaryBlue,
+                color: AppColors.adminRed,
                 width: 2,
               ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
             ),
           ),
         ),

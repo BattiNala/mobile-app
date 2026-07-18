@@ -51,3 +51,4 @@ graphify-out/
 
 # Local run scripts (may contain API keys)
 run.sh
+CLAUDE.md

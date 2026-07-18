@@ -19,40 +19,55 @@ class ProfileInfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(8),
+                  color: isDark
+                      ? AppColors.darkSurface2
+                      : AppColors.primaryBlueLight,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: AppColors.textSecondary, size: 20),
+                child: Icon(
+                  icon,
+                  color: isDark
+                      ? AppColors.darkTextSecondary
+                      : AppColors.primaryBlue,
+                  size: 18,
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       label,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark
+                            ? AppColors.darkTextSecondary
+                            : AppColors.textMuted,
                         fontWeight: FontWeight.w500,
+                        letterSpacing: 0.3,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: AppColors.textMain,
+                        color: isDark
+                            ? AppColors.darkTextMain
+                            : AppColors.textMain,
                         fontWeight: FontWeight.w500,
                       ),
                       maxLines: 2,
@@ -65,7 +80,11 @@ class ProfileInfoTile extends StatelessWidget {
           ),
         ),
         if (!isLast)
-          const Divider(height: 1, color: Color(0xFFF3F4F6), indent: 56),
+          Divider(
+            height: 1,
+            color: isDark ? AppColors.darkBorder : const Color(0xFFF0F4FF),
+            indent: 70,
+          ),
       ],
     );
   }

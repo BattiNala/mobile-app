@@ -6,37 +6,15 @@ import 'package:batti_nala/features/profile/view/profile_avatar.dart';
 import 'package:batti_nala/features/profile/view/profile_header.dart';
 import 'package:batti_nala/features/profile/view/profile_info_section.dart';
 import 'package:batti_nala/features/profile/view/trust_score_card.dart';
+import 'package:batti_nala/features/shared/widgets/logout_confirm_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
-  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              await ref.read(authNotifierProvider.notifier).logout();
-              if (context.mounted) {
-                context.go('/onboarding');
-              }
-            },
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
-  }
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) =>
+      showLogoutSheet(context, ref);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

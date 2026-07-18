@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:batti_nala/core/constants/colors.dart';
 import 'package:batti_nala/features/shared/issue/models/issue_model.dart';
 import 'package:flutter/material.dart';
@@ -9,180 +11,256 @@ class IssueCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final typeLower = issue.issueType.toLowerCase();
     final isElectricity = typeLower.contains('electricity');
-    final isSewage =
-        typeLower.contains('sewage') || typeLower.contains('drain');
+    final isSewage = typeLower.contains('sewage') || typeLower.contains('drain');
 
     final accentColor = isElectricity
         ? AppColors.primaryBlue
         : isSewage
-        ? const Color(0xFF006B3F)
-        : AppColors.adminRed;
+            ? const Color(0xFF059669)
+            : AppColors.adminRed;
 
     final typeIcon = isElectricity
-        ? Icons.electric_bolt
+        ? Icons.electric_bolt_rounded
         : isSewage
-        ? Icons.water_drop_outlined
-        : Icons.report_problem;
+            ? Icons.water_drop_rounded
+            : Icons.report_problem_rounded;
 
     final statusColor = _getStatusColor(issue.status);
     final statusLabel = _getStatusLabel(issue.status);
     final priorityColor = _getPriorityColor(issue.issuePriority);
+    final formattedTime =
+        DateFormat('dd MMM, hh:mm a').format(issue.createdAt.toLocal());
 
-    final formattedTime = _formatDateTime(issue.createdAt);
-
-    return Card(
-      elevation: 1,
-      color: AppColors.white,
-      shadowColor: AppColors.primaryBlue.withValues(alpha: 0.12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: AppColors.borderHover, width: 1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 4,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [accentColor, accentColor.withValues(alpha: 0.25)],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.darkSurface.withValues(alpha: 0.85)
+                : Colors.white.withValues(alpha: 0.82),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.07)
+                  : Colors.white.withValues(alpha: 0.7),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Gradient top accent bar
+              Container(
+                height: 3,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [accentColor, accentColor.withValues(alpha: 0.15)],
+                  ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.borderHover),
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Icon(
-                          typeIcon,
-                          color: AppColors.primaryBlue,
-                          size: 26,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryBlue.withValues(
-                                  alpha: 0.08,
-                                ),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                  color: AppColors.primaryBlue.withValues(
-                                    alpha: 0.22,
-                                  ),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Text(
-                                issue.issueLabel,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.primaryBlue800,
-                                  letterSpacing: 0.2,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              issue.issueType.toUpperCase(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textMain,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildDatePill(formattedTime),
-                    ],
-                  ),
 
-                  Padding(
-                    padding: const EdgeInsets.only(left: 10, top: 8.0),
-                    child: Text(
-                      'Description: ${issue.description}',
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textMain,
-                        height: 1.45,
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Icon container
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: accentColor.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Icon(typeIcon, color: accentColor, size: 24),
+                    ),
+
+                    const SizedBox(width: 14),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  issue.issueType.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w800,
+                                    color: isDark
+                                        ? AppColors.darkTextMain
+                                        : AppColors.textMain,
+                                    letterSpacing: 0.1,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // Time chip
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.white.withValues(alpha: 0.06)
+                                      : AppColors.primaryBlue.withValues(
+                                          alpha: 0.06,
+                                        ),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? Colors.white.withValues(alpha: 0.1)
+                                        : AppColors.border,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.access_time_rounded,
+                                      size: 11,
+                                      color: isDark
+                                          ? AppColors.darkTextSecondary
+                                          : AppColors.textMuted,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      formattedTime,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? AppColors.darkTextSecondary
+                                            : AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          // Label slug
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: accentColor.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: accentColor.withValues(alpha: 0.15),
+                              ),
+                            ),
+                            child: Text(
+                              issue.issueLabel,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: accentColor.withValues(alpha: 0.85),
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Text(
+                            issue.description,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.textSecondary,
+                              height: 1.45,
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              _badge(
+                                icon: _getStatusIcon(statusLabel),
+                                label: statusLabel,
+                                color: statusColor,
+                              ),
+                              _badge(
+                                icon: _getPriorityIcon(issue.issuePriority),
+                                label: issue.issuePriority.toUpperCase(),
+                                color: priorityColor,
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _buildStatusChip(label: statusLabel, color: statusColor),
-                      _buildPriorityChip(
-                        label: issue.issuePriority.toUpperCase(),
-                        color: priorityColor,
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Helper methods
-  Widget _buildDatePill(String formattedTime) {
+  Widget _badge({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.access_time, size: 14, color: AppColors.textMuted),
-          const SizedBox(width: 6),
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
           Text(
-            formattedTime,
-            style: const TextStyle(
+            label,
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
-              color: AppColors.textSecondary,
+              color: color,
             ),
           ),
         ],
@@ -190,89 +268,49 @@ class IssueCardWidget extends StatelessWidget {
     );
   }
 
-  Chip _buildStatusChip({required String label, required Color color}) {
-    return Chip(
-      avatar: Icon(_getStatusIcon(label), size: 16, color: color),
-      label: Text(
-        'Status: $label',
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
-      backgroundColor: color.withValues(alpha: 0.10),
-      side: BorderSide(color: color.withValues(alpha: 0.25)),
-      shape: const StadiumBorder(),
-      padding: EdgeInsets.zero,
-    );
-  }
-
-  Chip _buildPriorityChip({required String label, required Color color}) {
-    return Chip(
-      avatar: Icon(_getPriorityIcon(label), size: 16, color: color),
-      label: Text(
-        'Priority: $label',
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
-      backgroundColor: color.withValues(alpha: 0.10),
-      side: BorderSide(color: color.withValues(alpha: 0.25)),
-      shape: const StadiumBorder(),
-      padding: EdgeInsets.zero,
-    );
-  }
-
   IconData _getStatusIcon(String statusLabel) {
     switch (statusLabel.toLowerCase()) {
       case 'open':
-        return Icons.error_outline;
+        return Icons.bolt_rounded;
       case 'in progress':
-        return Icons.timelapse;
-      case 'assigned':
-        return Icons.assignment_turned_in;
+        return Icons.timelapse_rounded;
+      case 'pending verification':
+        return Icons.pending_actions_rounded;
       case 'resolved':
-        return Icons.check_circle_outline;
-      case 'closed':
-        return Icons.cancel_outlined;
+        return Icons.check_circle_rounded;
+      case 'rejected':
+        return Icons.cancel_rounded;
       default:
-        return Icons.info_outline;
+        return Icons.info_outline_rounded;
     }
   }
 
   IconData _getPriorityIcon(String priority) {
     switch (priority.toUpperCase()) {
-      case 'LOW':
-        return Icons.arrow_downward;
-      case 'HIGH':
+      case 'high':
         return Icons.warning_amber_rounded;
+      case 'low':
+        return Icons.arrow_downward_rounded;
       default:
-        return Icons.flag_outlined;
+        return Icons.flag_rounded;
     }
   }
 
   String _getStatusLabel(String status) {
-    switch (status.toLowerCase()) {
-      case 'open':
+    switch (status.toUpperCase()) {
+      case 'OPEN':
         return 'Open';
-      case 'in_progress':
+      case 'IN_PROGRESS':
         return 'In Progress';
-      case 'assigned':
-        return 'Assigned';
-      case 'resolved':
+      case 'PENDING_VERIFICATION':
+        return 'Pending Verification';
+      case 'RESOLVED':
         return 'Resolved';
-      case 'closed':
-        return 'Closed';
+      case 'REJECTED':
+        return 'Rejected';
       default:
-        return status;
+        return status.replaceAll('_', ' ');
     }
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    return DateFormat('dd/MM HH:mm').format(dateTime.toLocal());
   }
 
   Color _getStatusColor(String status) {
@@ -280,11 +318,13 @@ class IssueCardWidget extends StatelessWidget {
       case 'OPEN':
         return AppColors.adminRed;
       case 'IN_PROGRESS':
-      case 'ASSIGNED':
-        return AppColors.primaryBlue;
+        return const Color(0xFF3B82F6);
+      case 'PENDING_VERIFICATION':
+        return const Color(0xFFF59E0B);
       case 'RESOLVED':
-      case 'CLOSED':
-        return const Color(0xFF16A34A);
+        return const Color(0xFF10B981);
+      case 'REJECTED':
+        return const Color(0xFFEF4444);
       default:
         return AppColors.textMuted;
     }
@@ -292,11 +332,10 @@ class IssueCardWidget extends StatelessWidget {
 
   Color _getPriorityColor(String priority) {
     switch (priority.toUpperCase()) {
-      case 'LOW':
-        return AppColors.primaryBlue800;
       case 'HIGH':
         return AppColors.adminRed;
-      case 'NORMAL':
+      case 'LOW':
+        return AppColors.primaryBlue800;
       default:
         return AppColors.primaryBlue;
     }
