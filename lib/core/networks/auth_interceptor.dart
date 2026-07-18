@@ -47,9 +47,17 @@ class AuthInterceptor extends Interceptor {
       return handler.next(err);
     }
 
-    // Don't retry refresh token requests
-    if (err.requestOptions.path.contains('/auth/refresh')) {
-      _storage.clearAll();
+    // Public auth endpoints returning 401 are legitimate credential failures —
+    // do not attempt a token refresh or clear storage for them.
+    final publicAuthPaths = [
+      '/auth/login',
+      '/auth/citizen-register',
+      '/auth/signup',
+      '/auth/register',
+      '/auth/password-reset',
+      '/auth/refresh',
+    ];
+    if (publicAuthPaths.any((p) => err.requestOptions.path.contains(p))) {
       return handler.next(err);
     }
 
@@ -59,7 +67,7 @@ class AuthInterceptor extends Interceptor {
   void _handleTokenRefresh(DioException err, ErrorInterceptorHandler handler) {
     _storage.getRefreshToken().then((refreshToken) async {
       if (refreshToken == null) {
-        await _storage.clearAll();
+        await _storage.clearSession();
         _ref.read(authNotifierProvider.notifier).logout();
         return handler.next(err);
       }
@@ -93,11 +101,11 @@ class AuthInterceptor extends Interceptor {
           }
           _pendingRequests.clear();
         } else {
-          await _storage.clearAll();
+          await _storage.clearSession();
           handler.next(err);
         }
       } catch (e) {
-        await _storage.clearAll();
+        await _storage.clearSession();
         handler.next(err);
       } finally {
         _isRefreshing = false;
