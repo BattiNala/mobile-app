@@ -24,7 +24,7 @@ class AuthHeaderWidget extends StatelessWidget {
         Container(
           width: 88,
           height: 88,
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(0),
           decoration: BoxDecoration(
             color: isLight
                 ? Colors.white.withValues(alpha: 0.18)

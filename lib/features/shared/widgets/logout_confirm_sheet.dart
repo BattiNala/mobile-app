@@ -63,7 +63,8 @@ class _LogoutSheetState extends State<_LogoutSheet> {
             24,
             0,
             24,
-            24 + MediaQuery.of(context).viewInsets.bottom +
+            24 +
+                MediaQuery.of(context).viewInsets.bottom +
                 MediaQuery.of(context).padding.bottom,
           ),
           child: Column(
@@ -88,17 +89,16 @@ class _LogoutSheetState extends State<_LogoutSheet> {
 
               // App logo
               Container(
-                width: 80,
-                height: 80,
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryBlue.withValues(alpha: 0.08),
+                  color: AppColors.primaryBlue,
                   shape: BoxShape.circle,
                   border: Border.all(
                     color: AppColors.primaryBlue.withValues(alpha: 0.15),
                     width: 1.5,
                   ),
                 ),
-                padding: const EdgeInsets.all(6),
                 child: Image.asset(
                   'assets/icons/battinala_logo.png',
                   fit: BoxFit.contain,

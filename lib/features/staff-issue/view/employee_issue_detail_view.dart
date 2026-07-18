@@ -95,7 +95,8 @@ class EmployeeIssueDetailView extends ConsumerWidget {
                           location: issue.issueLocation,
                           latitude: issue.latitude,
                           longitude: issue.longitude,
-                          onTap: () => context.push('/mission-map', extra: issue),
+                          onTap: () =>
+                              context.push('/mission-map', extra: issue),
                         ),
                         const SizedBox(height: 40),
                         if (issue.attachments.isNotEmpty) ...[
@@ -140,10 +141,7 @@ class EmployeeIssueDetailView extends ConsumerWidget {
         },
         onError: () {
           context.pushNamed('employee-dashboard');
-          SnackbarService.showError(
-            context,
-            'Failed to report issue as false',
-          );
+          SnackbarService.showError(context, 'Failed to report issue as false');
         },
       ),
     );
@@ -211,7 +209,8 @@ class _ReportFalseSheetState extends State<_ReportFalseSheet> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom +
+    final bottomInset =
+        MediaQuery.of(context).viewInsets.bottom +
         MediaQuery.of(context).padding.bottom;
 
     return ClipRRect(
@@ -223,8 +222,7 @@ class _ReportFalseSheetState extends State<_ReportFalseSheet> {
             color: isDark
                 ? AppColors.darkSurface.withValues(alpha: 0.96)
                 : Colors.white.withValues(alpha: 0.97),
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             border: Border(
               top: BorderSide(
                 color: isDark
@@ -260,16 +258,15 @@ class _ReportFalseSheetState extends State<_ReportFalseSheet> {
               Row(
                 children: [
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: 68,
+                    height: 68,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryBlue.withValues(alpha: 0.08),
+                      color: AppColors.primaryBlue,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: AppColors.primaryBlue.withValues(alpha: 0.15),
                       ),
                     ),
-                    padding: const EdgeInsets.all(8),
                     child: Image.asset(
                       'assets/icons/battinala_logo.png',
                       fit: BoxFit.contain,
@@ -366,12 +363,16 @@ class _ReportFalseSheetState extends State<_ReportFalseSheet> {
                 controller: _reasonController,
                 maxLines: 4,
                 maxLength: 300,
-                buildCounter: (_, {required currentLength, required isFocused, maxLength}) =>
-                    null,
+                buildCounter:
+                    (
+                      _, {
+                      required currentLength,
+                      required isFocused,
+                      maxLength,
+                    }) => null,
                 style: TextStyle(
                   fontSize: 14,
-                  color:
-                      isDark ? AppColors.darkTextMain : AppColors.textMain,
+                  color: isDark ? AppColors.darkTextMain : AppColors.textMain,
                   height: 1.5,
                 ),
                 decoration: InputDecoration(
@@ -392,17 +393,13 @@ class _ReportFalseSheetState extends State<_ReportFalseSheet> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(
-                      color: isDark
-                          ? AppColors.darkBorder
-                          : AppColors.border,
+                      color: isDark ? AppColors.darkBorder : AppColors.border,
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(
-                      color: isDark
-                          ? AppColors.darkBorder
-                          : AppColors.border,
+                      color: isDark ? AppColors.darkBorder : AppColors.border,
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
@@ -443,8 +440,7 @@ class _ReportFalseSheetState extends State<_ReportFalseSheet> {
                     child: GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(
-                        padding:
-                            const EdgeInsets.symmetric(vertical: 15),
+                        padding: const EdgeInsets.symmetric(vertical: 15),
                         decoration: BoxDecoration(
                           color: isDark
                               ? AppColors.darkSurface2
@@ -476,8 +472,7 @@ class _ReportFalseSheetState extends State<_ReportFalseSheet> {
                   Expanded(
                     flex: 2,
                     child: GestureDetector(
-                      onTap: _isLoading ||
-                              _reasonController.text.trim().isEmpty
+                      onTap: _isLoading || _reasonController.text.trim().isEmpty
                           ? null
                           : _submit,
                       child: AnimatedContainer(
@@ -492,8 +487,9 @@ class _ReportFalseSheetState extends State<_ReportFalseSheet> {
                               ? null
                               : [
                                   BoxShadow(
-                                    color: AppColors.adminRed
-                                        .withValues(alpha: 0.35),
+                                    color: AppColors.adminRed.withValues(
+                                      alpha: 0.35,
+                                    ),
                                     blurRadius: 16,
                                     offset: const Offset(0, 5),
                                   ),

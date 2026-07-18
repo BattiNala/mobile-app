@@ -33,7 +33,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     _OnboardingPage(
       title: 'AI Auto-Detection',
       subtitle:
-          'Our Gemini-powered AI reads your photo and fills in the issue type and priority — so you don\'t have to.',
+          'Our Gemini-powered AI reads your photo and fills in the issue type and priority - so you don\'t have to.',
       primaryColor: Color(0xFF4F46E5),
       accentColor: Color(0xFF818CF8),
       illustration: _AiIllustration(),
@@ -41,7 +41,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen>
     _OnboardingPage(
       title: 'Track Every Step',
       subtitle:
-          'Follow your report from submission to resolution. Staff updates are live — you\'re never left in the dark.',
+          'Follow your report from submission to resolution. Staff updates are live - you\'re never left in the dark.',
       primaryColor: Color(0xFF065F46),
       accentColor: Color(0xFF34D399),
       illustration: _TrackIllustration(),
