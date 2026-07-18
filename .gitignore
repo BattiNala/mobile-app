@@ -45,3 +45,9 @@ app.*.map.json
 /android/app/release
 
 documentation/
+
+# graphify knowledge graph output
+graphify-out/
+
+# Local run scripts (may contain API keys)
+run.sh
